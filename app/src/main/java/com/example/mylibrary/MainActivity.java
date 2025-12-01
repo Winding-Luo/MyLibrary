@@ -2,33 +2,24 @@ package com.example.mylibrary;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
-import android.view.Menu;
-import android.view.MenuItem;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
+import androidx.fragment.app.Fragment;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import java.util.ArrayList;
-import java.util.List;
-import com.example.mylibrary.BookContract.BookEntry;
 
 public class MainActivity extends AppCompatActivity {
 
-    private BookDbHelper dbHelper;
-    private BookAdapter adapter;
+    private FloatingActionButton fab;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // --- 1. 检查登录状态 ---
+        // 检查登录
         SharedPreferences prefs = getSharedPreferences("UserPrefs", MODE_PRIVATE);
         long userId = prefs.getLong("current_user_id", -1);
         if (userId == -1) {
-            // 未登录，跳转到 LoginActivity
             startActivity(new Intent(this, LoginActivity.class));
             finish();
             return;
@@ -36,70 +27,35 @@ public class MainActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_main);
 
-        dbHelper = new BookDbHelper(this);
-        RecyclerView recyclerView = findViewById(R.id.recycler_view);
-        FloatingActionButton fab = findViewById(R.id.fab_add);
+        BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
+        fab = findViewById(R.id.fab_add_main);
 
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new BookAdapter();
+        // 默认显示首页
+        getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, new HomeFragment()).commit();
 
-        // --- 2. 设置点击事件：跳转到详情页 ---
-        adapter.setOnItemClickListener(book -> {
-            Intent intent = new Intent(MainActivity.this, BookDetailActivity.class);
-            intent.putExtra("book_id", book.getId());
-            intent.putExtra("book_title", book.getTitle());
-            startActivity(intent);
+        // 底部导航点击事件
+        bottomNav.setOnItemSelectedListener(item -> {
+            Fragment selectedFragment = null;
+            int itemId = item.getItemId();
+
+            if (itemId == R.id.nav_home) {
+                selectedFragment = new HomeFragment();
+                fab.show(); // 首页显示添加按钮
+            } else if (itemId == R.id.nav_profile) {
+                selectedFragment = new ProfileFragment();
+                fab.hide(); // 个人中心隐藏添加按钮
+            }
+
+            if (selectedFragment != null) {
+                getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, selectedFragment).commit();
+            }
+            return true;
         });
 
-        recyclerView.setAdapter(adapter);
-
+        // 添加按钮点击
         fab.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, AddBookActivity.class);
             startActivity(intent);
         });
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        // 只有在已登录的情况下才加载数据
-        SharedPreferences prefs = getSharedPreferences("UserPrefs", MODE_PRIVATE);
-        if (prefs.getLong("current_user_id", -1) != -1) {
-            loadBooks();
-        }
-    }
-
-    // --- 3. 添加注销菜单 ---
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.main_menu, menu); // 需要新建 res/menu/main_menu.xml
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == R.id.action_logout) {
-            SharedPreferences prefs = getSharedPreferences("UserPrefs", MODE_PRIVATE);
-            prefs.edit().clear().apply();
-            startActivity(new Intent(this, LoginActivity.class));
-            finish();
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
-    }
-
-    private void loadBooks() {
-        SQLiteDatabase db = dbHelper.getReadableDatabase();
-        List<Book> books = new ArrayList<>();
-        Cursor cursor = db.query(BookEntry.TABLE_NAME, null, null, null, null, null, BookEntry._ID + " DESC");
-        while (cursor.moveToNext()) {
-            long id = cursor.getLong(cursor.getColumnIndexOrThrow(BookEntry._ID));
-            String title = cursor.getString(cursor.getColumnIndexOrThrow(BookEntry.COLUMN_TITLE));
-            String author = cursor.getString(cursor.getColumnIndexOrThrow(BookEntry.COLUMN_AUTHOR));
-            float rating = cursor.getFloat(cursor.getColumnIndexOrThrow(BookEntry.COLUMN_RATING));
-            books.add(new Book(id, title, author, rating));
-        }
-        cursor.close();
-        adapter.setBooks(books);
     }
 }

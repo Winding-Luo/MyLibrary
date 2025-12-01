@@ -5,12 +5,15 @@ import android.provider.BaseColumns;
 public final class BookContract {
     private BookContract() {}
 
+
     // 原有的图书表
     public static class BookEntry implements BaseColumns {
         public static final String TABLE_NAME = "library";
         public static final String COLUMN_TITLE = "title";
         public static final String COLUMN_AUTHOR = "author";
         public static final String COLUMN_RATING = "rating"; // 这是书籍的平均评分
+
+        public static final String COLUMN_IMAGE_URI = "image_uri";
     }
 
     // 新增：用户表

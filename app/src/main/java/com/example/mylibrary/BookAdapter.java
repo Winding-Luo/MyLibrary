@@ -3,111 +3,118 @@ package com.example.mylibrary;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.TextView; // 引入 TextView
+import android.widget.ImageView;
+import android.widget.RatingBar;
+import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+import com.bumptech.glide.Glide; // 确保引入了 Glide
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class BookAdapter extends RecyclerView.Adapter<BookAdapter.BookViewHolder> {
 
-    // 1. 数据源列表
     private List<Book> books;
-
-    // 2. 点击事件监听器
     private OnItemClickListener listener;
+    // [修改点 1] 改个名字，防止和系统接口冲突
+    private OnBookLongClickListener longListener;
 
-    /**
-     * 点击事件的接口定义
-     */
+    // --- 接口定义 ---
+
     public interface OnItemClickListener {
         void onItemClick(Book book);
     }
 
-    /**
-     * 为外部设置监听器的公共方法
-     *
-     * @param listener 在Activity中实现的监听器实例
-     */
+    // [修改点 2] 自定义长按接口，改名为 OnBookLongClickListener
+    public interface OnBookLongClickListener {
+        void onBookLongClick(Book book);
+    }
+
+    // 设置点击监听
     public void setOnItemClickListener(OnItemClickListener listener) {
         this.listener = listener;
     }
 
-    /**
-     * 无参数的构造函数
-     * 在 Activity 中使用 "new BookAdapter()" 时调用
-     */
+    // [修改点 3] 设置长按监听的方法名也改一下
+    public void setOnBookLongClickListener(OnBookLongClickListener listener) {
+        this.longListener = listener;
+    }
+
     public BookAdapter() {
         this.books = new ArrayList<>();
     }
 
-    /**
-     * 用于更新数据并刷新 RecyclerView 的方法
-     *
-     * @param books 新的书籍数据列表
-     */
     public void setBooks(List<Book> books) {
-        this.books = books; // 直接替换列表
-        notifyDataSetChanged(); // 通知适配器数据已更改，刷新整个列表
+        this.books = books;
+        notifyDataSetChanged();
     }
 
-    /**
-     * 创建 ViewHolder 实例
-     * 这个方法会为每个列表项创建一个新的视图
-     */
     @NonNull
     @Override
     public BookViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        // 加载列表项的布局文件 (你需要创建 item_book.xml)
+        // 加载布局
         View itemView = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.item_book, parent, false);
         return new BookViewHolder(itemView);
     }
 
-    /**
-     * 将数据绑定到 ViewHolder 的视图上
-     *
-     * @param holder   当前列表项的 ViewHolder
-     * @param position 当前列表项的位置
-     */
     @Override
     public void onBindViewHolder(@NonNull BookViewHolder holder, int position) {
-        // 获取当前位置的书籍对象
         Book currentBook = books.get(position);
 
-        // 将书籍数据设置到视图上 (你需要确保ViewHolder中有这些视图)
+        // 设置文本
         holder.textViewTitle.setText(currentBook.getTitle());
         holder.textViewAuthor.setText(currentBook.getAuthor());
+        holder.ratingBar.setRating(currentBook.getRating());
 
-        // 为整个列表项设置点击事件
+        // 加载图片 (Glide)
+        if (currentBook.getImageUri() != null && !currentBook.getImageUri().isEmpty()) {
+            Glide.with(holder.itemView.getContext())
+                    .load(currentBook.getImageUri())
+                    .placeholder(android.R.drawable.ic_menu_gallery)
+                    .error(android.R.drawable.ic_menu_report_image)
+                    .centerCrop()
+                    .into(holder.imageViewCover);
+        } else {
+            holder.imageViewCover.setImageResource(android.R.drawable.ic_menu_gallery);
+        }
+
+        // 点击事件
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) {
                 listener.onItemClick(currentBook);
             }
         });
+
+        // [修改点 4] 长按事件
+        holder.itemView.setOnLongClickListener(v -> {
+            if (longListener != null) {
+                longListener.onBookLongClick(currentBook); // 调用我们改名后的接口方法
+                return true; // 返回 true 表示消费了事件，不会再触发点击
+            }
+            return false;
+        });
     }
 
-    /**
-     * 返回数据项的总数
-     */
     @Override
     public int getItemCount() {
         return books != null ? books.size() : 0;
     }
 
-    /**
-     * ViewHolder 内部类，用于持有每个列表项的视图引用
-     */
     class BookViewHolder extends RecyclerView.ViewHolder {
         private final TextView textViewTitle;
         private final TextView textViewAuthor;
+        private final ImageView imageViewCover; // 封面图
+        private final RatingBar ratingBar;      // 评分条
 
         public BookViewHolder(@NonNull View itemView) {
             super(itemView);
-            // 修改这里：使用 item_book.xml 中定义的正确 ID (tv_title 和 tv_author)
+            // 绑定控件
             textViewTitle = itemView.findViewById(R.id.tv_title);
             textViewAuthor = itemView.findViewById(R.id.tv_author);
+            imageViewCover = itemView.findViewById(R.id.iv_book_cover);
+            ratingBar = itemView.findViewById(R.id.rating_bar_display);
         }
     }
 }
