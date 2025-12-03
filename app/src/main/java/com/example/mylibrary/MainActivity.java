@@ -16,7 +16,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // 检查登录
         SharedPreferences prefs = getSharedPreferences("UserPrefs", MODE_PRIVATE);
         long userId = prefs.getLong("current_user_id", -1);
         if (userId == -1) {
@@ -26,24 +25,25 @@ public class MainActivity extends AppCompatActivity {
         }
 
         setContentView(R.layout.activity_main);
-
         BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
         fab = findViewById(R.id.fab_add_main);
 
-        // 默认显示首页
+        // 默认显示图书馆
         getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, new HomeFragment()).commit();
 
-        // 底部导航点击事件
         bottomNav.setOnItemSelectedListener(item -> {
             Fragment selectedFragment = null;
             int itemId = item.getItemId();
 
             if (itemId == R.id.nav_home) {
                 selectedFragment = new HomeFragment();
-                fab.show(); // 首页显示添加按钮
+                fab.show(); // 私有库允许添加
+            } else if (itemId == R.id.nav_square) { // [新增]
+                selectedFragment = new SquareFragment();
+                fab.hide(); // 广场不允许直接添加
             } else if (itemId == R.id.nav_profile) {
                 selectedFragment = new ProfileFragment();
-                fab.hide(); // 个人中心隐藏添加按钮
+                fab.hide();
             }
 
             if (selectedFragment != null) {
@@ -52,7 +52,6 @@ public class MainActivity extends AppCompatActivity {
             return true;
         });
 
-        // 添加按钮点击
         fab.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, AddBookActivity.class);
             startActivity(intent);

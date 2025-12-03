@@ -11,6 +11,7 @@
         android:padding="24dp">
 
         <TextView
+            android:id="@+id/tv_header_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Add New Book"
@@ -71,7 +72,38 @@
             android:numStars="5"
             android:stepSize="0.5"
             android:rating="0"
-            android:layout_marginBottom="32dp"/>
+            android:layout_marginBottom="24dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Status:"
+            android:textSize="16sp"
+            android:layout_marginBottom="8dp"/>
+
+        <Spinner
+            android:id="@+id/spinner_status"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            android:layout_marginBottom="24dp"/>
+
+        <Button
+            android:id="@+id/btn_import_file"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="导入电子书 (.txt)"
+            android:backgroundTint="#673AB7"
+            android:layout_marginBottom="8dp"/>
+
+        <TextView
+            android:id="@+id/tv_file_status"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="未选择文件"
+            android:gravity="center"
+            android:textColor="#757575"
+            android:layout_marginBottom="24dp"/>
 
         <Button
             android:id="@+id/btn_save"

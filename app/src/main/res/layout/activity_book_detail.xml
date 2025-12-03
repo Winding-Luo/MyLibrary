@@ -21,8 +21,7 @@
                 android:layout_height="220dp"
                 android:scaleType="centerInside"
                 android:src="@drawable/ic_default_book_cover"
-                android:background="#F5F5F5"
-                android:contentDescription="书籍封面"/>
+                android:background="#F5F5F5"/>
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -34,9 +33,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:layout_marginBottom="8dp">
-
+                    android:gravity="center_vertical">
                     <TextView
                         android:id="@+id/tv_detail_title"
                         android:layout_width="0dp"
@@ -52,78 +49,133 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="收藏"
-                        android:textSize="14sp"
-                        android:textColor="#666666"
                         android:button="@android:drawable/btn_star"
-                        android:background="?attr/selectableItemBackground"
-                        android:paddingStart="4dp"
-                        android:minHeight="48dp"/>
+                        android:buttonTint="#FFD700"
+                        android:paddingStart="4dp"/>
                 </LinearLayout>
 
                 <TextView
                     android:id="@+id/tv_detail_author"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Author Name"
+                    android:text="Author"
                     android:textSize="16sp"
                     android:textColor="#666666"
-                    android:layout_marginBottom="24dp"/>
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:background="#EEEEEE"
                     android:layout_marginBottom="16dp"/>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="我的评价"
-                    android:textStyle="bold"
-                    android:layout_marginBottom="8dp"/>
 
                 <RatingBar
                     android:id="@+id/rating_bar"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    style="?android:attr/ratingBarStyleIndicator"
                     android:numStars="5"
-                    android:stepSize="1.0"
-                    style="?android:attr/ratingBarStyleIndicator"/>
+                    android:isIndicator="true"/>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#EEEEEE"
+                    android:layout_marginVertical="16dp"/>
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:layout_marginTop="16dp">
-
-                    <EditText
-                        android:id="@+id/et_comment"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:hint="写下你的想法..."
-                        android:background="@null"
-                        android:minHeight="48dp"/>
-
+                    android:gravity="center"
+                    android:layout_marginBottom="16dp">
                     <Button
-                        android:id="@+id/btn_submit_review"
+                        android:id="@+id/btn_share_to_square"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="发送"
-                        style="@style/Widget.MaterialComponents.Button.TextButton"/>
+                        android:text="分享到广场"
+                        android:backgroundTint="#FF9800"
+                        android:visibility="gone"/>
+                    <Button
+                        android:id="@+id/btn_add_to_library"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="加入我的书库"
+                        android:backgroundTint="#2196F3"
+                        android:visibility="gone"/>
                 </LinearLayout>
 
-                <TextView
-                    android:id="@+id/tv_reviews_list"
+                <Button
+                    android:id="@+id/btn_start_read"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:text="暂无评论"
-                    android:lineSpacingExtra="4dp"/>
+                    android:text="开始阅读"
+                    android:backgroundTint="#4CAF50"
+                    android:layout_marginBottom="16dp"/>
 
+                <LinearLayout
+                    android:id="@+id/layout_reviews_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="广场评论"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="8dp"/>
+
+                    <LinearLayout
+                        android:id="@+id/layout_public_review_input"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="gone">
+                        <RatingBar
+                            android:id="@+id/rating_bar_review"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            style="?android:attr/ratingBarStyleSmall"
+                            android:numStars="5"
+                            android:stepSize="1"
+                            android:layout_marginBottom="8dp"/>
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+                            <EditText
+                                android:id="@+id/et_comment"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:hint="写下你的想法..."
+                                android:minHeight="48dp"/>
+                            <Button
+                                android:id="@+id/btn_submit_review"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="发送"/>
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/rv_public_reviews"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:nestedScrollingEnabled="false"
+                        android:layout_marginTop="16dp"/>
+                </LinearLayout>
+
+                <View android:layout_width="match_parent" android:layout_height="100dp"/>
             </LinearLayout>
         </LinearLayout>
     </ScrollView>
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab_delete"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="24dp"
+        android:layout_marginBottom="90dp"
+        android:src="@android:drawable/ic_menu_delete"
+        app:tint="#FFFFFF"
+        app:backgroundTint="#F44336"/>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab_edit"
@@ -134,5 +186,4 @@
         android:src="@android:drawable/ic_menu_edit"
         app:tint="#FFFFFF"
         app:backgroundTint="#2196F3"/>
-
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

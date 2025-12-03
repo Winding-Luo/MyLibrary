@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:title="排序"
+        app:showAsAction="ifRoom"
+        android:icon="@android:drawable/ic_menu_sort_by_size">
+        <menu>
+            <item android:id="@+id/sort_time" android:title="按添加时间" />
+            <item android:id="@+id/sort_rating" android:title="按评分高低" />
+            <item android:id="@+id/sort_status" android:title="按阅读状态" />
+        </menu>
+    </item>
+
+    <item
+        android:title="筛选"
+        app:showAsAction="ifRoom"
+        android:icon="@android:drawable/ic_menu_view">
+        <menu>
+            <item android:id="@+id/filter_all" android:title="显示全部" />
+            <item android:id="@+id/filter_todo" android:title="只看想看" />
+            <item android:id="@+id/filter_reading" android:title="只看阅读中" />
+            <item android:id="@+id/filter_read" android:title="只看已读" />
+        </menu>
+    </item>
+</menu>

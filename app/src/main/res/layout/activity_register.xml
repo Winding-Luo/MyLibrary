@@ -4,7 +4,8 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:padding="24dp"
-    android:gravity="center_vertical">
+    android:gravity="center_vertical"
+    android:background="#FAFAFA">
 
     <TextView
         android:layout_width="wrap_content"
@@ -20,7 +21,10 @@
         android:layout_height="wrap_content"
         android:hint="请输入用户名"
         android:inputType="text"
-        android:minHeight="48dp"/>
+        android:minHeight="48dp"
+        android:background="@android:drawable/edit_text"
+        android:padding="12dp"
+        android:layout_marginBottom="16dp"/>
 
     <EditText
         android:id="@+id/et_reg_password"
@@ -28,14 +32,28 @@
         android:layout_height="wrap_content"
         android:hint="设置密码"
         android:inputType="textPassword"
-        android:layout_marginTop="16dp"
-        android:minHeight="48dp"/>
+        android:minHeight="48dp"
+        android:background="@android:drawable/edit_text"
+        android:padding="12dp"
+        android:layout_marginBottom="16dp"/>
+
+    <EditText
+        android:id="@+id/et_reg_confirm_password"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="确认密码"
+        android:inputType="textPassword"
+        android:minHeight="48dp"
+        android:background="@android:drawable/edit_text"
+        android:padding="12dp"
+        android:layout_marginBottom="24dp"/>
 
     <Button
         android:id="@+id/btn_register_confirm"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="注册并登录"
-        android:layout_marginTop="24dp"/>
+        android:backgroundTint="#4CAF50"
+        android:textColor="#FFFFFF"/>
 
 </LinearLayout>

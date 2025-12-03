@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#F8F0E3">
+
+    <ScrollView
+        android:id="@+id/scroll_view_read"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <TextView
+            android:id="@+id/tv_book_content"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="20dp"
+            android:text="正在加载书籍内容..."
+            android:textSize="18sp"
+            android:lineSpacingMultiplier="1.5"
+            android:textColor="#333333"/>
+    </ScrollView>
+</LinearLayout>

@@ -4,26 +4,41 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Button;
-import android.widget.CheckBox; // 修改引入
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.RatingBar;
 import android.widget.TextView;
 import android.widget.Toast;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import java.util.ArrayList;
+import java.util.List;
 
 public class BookDetailActivity extends AppCompatActivity {
 
     private long bookId;
     private long userId;
     private BookDbHelper dbHelper;
-    private TextView tvReviews, tvTitle, tvAuthor;
+    private boolean isPublicMode = false;
+
+    private TextView tvTitle, tvAuthor;
     private ImageView ivCover;
-    private RatingBar ratingBar;
-    private CheckBox btnFav; // 修改类型
+    private RatingBar ratingBar, reviewRatingBar;
+    private CheckBox btnFav;
+    private Button btnRead, btnShare, btnAddToLib, btnSubmitReview;
+    private EditText etComment;
+    private FloatingActionButton fabEdit, fabDelete;
+    private LinearLayout layoutReviewsContainer, layoutReviewInput;
+    private RecyclerView rvPublicReviews;
+    private PublicReviewAdapter reviewAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,94 +50,154 @@ public class BookDetailActivity extends AppCompatActivity {
         userId = prefs.getLong("current_user_id", -1);
 
         bookId = getIntent().getLongExtra("book_id", -1);
+        isPublicMode = getIntent().getBooleanExtra("is_public_mode", false);
 
         tvTitle = findViewById(R.id.tv_detail_title);
         tvAuthor = findViewById(R.id.tv_detail_author);
         ivCover = findViewById(R.id.iv_detail_cover);
         ratingBar = findViewById(R.id.rating_bar);
-        tvReviews = findViewById(R.id.tv_reviews_list);
 
-        // [修改] 获取 CheckBox
+        rvPublicReviews = findViewById(R.id.rv_public_reviews);
+        rvPublicReviews.setLayoutManager(new LinearLayoutManager(this));
+        reviewAdapter = new PublicReviewAdapter(this, userId);
+        rvPublicReviews.setAdapter(reviewAdapter);
+
+        layoutReviewsContainer = findViewById(R.id.layout_reviews_container);
+        reviewRatingBar = findViewById(R.id.rating_bar_review);
+        etComment = findViewById(R.id.et_comment);
+        btnSubmitReview = findViewById(R.id.btn_submit_review);
+        layoutReviewInput = findViewById(R.id.layout_public_review_input);
+
+        btnRead = findViewById(R.id.btn_start_read);
+        btnShare = findViewById(R.id.btn_share_to_square);
+        btnAddToLib = findViewById(R.id.btn_add_to_library);
         btnFav = findViewById(R.id.btn_favorite);
 
-        EditText etComment = findViewById(R.id.et_comment);
-        Button btnSubmit = findViewById(R.id.btn_submit_review);
-        FloatingActionButton fabEdit = findViewById(R.id.fab_edit);
+        fabEdit = findViewById(R.id.fab_edit);
+        fabDelete = findViewById(R.id.fab_delete);
 
-        // --- 收藏逻辑更新 ---
-        boolean isFav = dbHelper.isFavorite(userId, bookId);
-        updateFavoriteButtonState(isFav); // 初始化状态
+        setupUIByMode();
 
-        btnFav.setOnClickListener(v -> {
-            boolean newStatus = dbHelper.toggleFavorite(userId, bookId);
-            updateFavoriteButtonState(newStatus);
-            Toast.makeText(this, newStatus ? "已加入收藏" : "已取消收藏", Toast.LENGTH_SHORT).show();
-        });
+        if (!isPublicMode) {
+            btnRead.setOnClickListener(v -> startReading());
+            btnShare.setOnClickListener(v -> {
+                boolean success = dbHelper.shareBookToSquare(bookId, userId);
+                Toast.makeText(this, success ? "已分享到广场" : "广场上已存在这本书", Toast.LENGTH_SHORT).show();
+            });
+            fabEdit.setOnClickListener(v -> {
+                Intent intent = new Intent(this, AddBookActivity.class);
+                intent.putExtra("book_id", bookId);
+                startActivity(intent);
+            });
+            fabDelete.setOnClickListener(v -> showDeleteConfirmation());
+            boolean isFav = dbHelper.isFavorite(userId, bookId);
+            updateFavoriteButtonState(isFav);
+            btnFav.setOnClickListener(v -> {
+                boolean newStatus = dbHelper.toggleFavorite(userId, bookId);
+                updateFavoriteButtonState(newStatus);
+            });
+        } else {
+            // [修改] 处理添加结果
+            btnAddToLib.setOnClickListener(v -> {
+                boolean success = dbHelper.addBookFromSquare(userId, bookId);
+                if (success) {
+                    Toast.makeText(this, "已加入你的图书馆", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(this, "你的图书馆里已经有这本书了", Toast.LENGTH_SHORT).show();
+                }
+            });
 
-        // ... 评论和编辑逻辑保持不变 ...
-        btnSubmit.setOnClickListener(v -> {
-            String comment = etComment.getText().toString();
-            if (comment.isEmpty()) return;
-            dbHelper.addReview(userId, bookId, ratingBar.getRating(), comment);
-            Toast.makeText(this, "评价成功", Toast.LENGTH_SHORT).show();
-            etComment.setText("");
-            loadReviews();
-        });
-
-        fabEdit.setOnClickListener(v -> {
-            Intent intent = new Intent(this, AddBookActivity.class);
-            intent.putExtra("book_id", bookId);
-            startActivity(intent);
-        });
+            btnSubmitReview.setOnClickListener(v -> {
+                String comment = etComment.getText().toString();
+                if (comment.isEmpty()) return;
+                dbHelper.addPublicReview(userId, bookId, reviewRatingBar.getRating(), comment);
+                Toast.makeText(this, "评论成功", Toast.LENGTH_SHORT).show();
+                etComment.setText("");
+                loadPublicReviews();
+            });
+        }
     }
 
-    // [新增] 辅助方法：更新收藏按钮的文字和状态
-    private void updateFavoriteButtonState(boolean isFavorite) {
-        btnFav.setChecked(isFavorite);
-        btnFav.setText(isFavorite ? "已收藏" : "收藏");
+    private void setupUIByMode() {
+        if (isPublicMode) {
+            btnRead.setVisibility(View.GONE);
+            fabEdit.setVisibility(View.GONE);
+            fabDelete.setVisibility(View.GONE);
+            btnShare.setVisibility(View.GONE);
+            btnFav.setVisibility(View.GONE);
+            btnAddToLib.setVisibility(View.VISIBLE);
+            layoutReviewsContainer.setVisibility(View.VISIBLE);
+            layoutReviewInput.setVisibility(View.VISIBLE);
+            loadSquareBookData();
+            loadPublicReviews();
+        } else {
+            btnRead.setVisibility(View.VISIBLE);
+            fabEdit.setVisibility(View.VISIBLE);
+            fabDelete.setVisibility(View.VISIBLE);
+            btnShare.setVisibility(View.VISIBLE);
+            btnFav.setVisibility(View.VISIBLE);
+            btnAddToLib.setVisibility(View.GONE);
+            layoutReviewsContainer.setVisibility(View.GONE);
+            loadPrivateBookData();
+        }
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        loadBookData();
-        loadReviews();
-    }
-
-    private void loadBookData() {
+    private void loadPrivateBookData() {
         Book book = dbHelper.getBook(bookId);
         if (book != null) {
             tvTitle.setText(book.getTitle());
-            tvAuthor.setText("作者: " + book.getAuthor());
+            tvAuthor.setText(book.getAuthor());
             ratingBar.setRating(book.getRating());
-
-            // [修改] 优化 Glide 加载逻辑
-            // 无论有没有 URI，都先显示默认图，如果有 URI 再去加载
-            // .error() 很重要，如果图片路径坏了，它会退回到默认图
-            if (book.getImageUri() != null && !book.getImageUri().isEmpty()) {
-                Glide.with(this)
-                        .load(book.getImageUri())
-                        .centerCrop()
-                        .placeholder(R.drawable.ic_default_book_cover) // 加载中显示
-                        .error(R.drawable.ic_default_book_cover)       // 加载失败显示
-                        .into(ivCover);
-            } else {
-                // 如果数据库里本来就没存 URI，直接显示默认图
-                ivCover.setImageResource(R.drawable.ic_default_book_cover);
-                ivCover.setScaleType(ImageView.ScaleType.CENTER_INSIDE); // 默认图不需要裁切，完整显示
-            }
+            if (book.getImageUri() != null) Glide.with(this).load(book.getImageUri()).into(ivCover);
         }
     }
 
-    private void loadReviews() {
-        Cursor cursor = dbHelper.getReviews(bookId);
-        StringBuilder sb = new StringBuilder();
+    private void loadSquareBookData() {
+        Cursor c = dbHelper.getReadableDatabase().rawQuery("SELECT * FROM " + BookDbHelper.TABLE_PUBLIC_BOOKS + " WHERE _id=?", new String[]{String.valueOf(bookId)});
+        if (c.moveToFirst()) {
+            tvTitle.setText(c.getString(c.getColumnIndexOrThrow("title")));
+            tvAuthor.setText(c.getString(c.getColumnIndexOrThrow("author")));
+            String img = c.getString(c.getColumnIndexOrThrow("image_uri"));
+            if (img != null) Glide.with(this).load(img).into(ivCover);
+            ratingBar.setRating(0);
+        }
+        c.close();
+    }
+
+    private void loadPublicReviews() {
+        List<PublicReview> reviews = new ArrayList<>();
+        Cursor cursor = dbHelper.getPublicReviews(bookId);
         while (cursor.moveToNext()) {
-            String user = cursor.getString(cursor.getColumnIndexOrThrow(BookContract.UserEntry.COLUMN_USERNAME));
-            String comment = cursor.getString(cursor.getColumnIndexOrThrow(BookContract.ReviewEntry.COLUMN_COMMENT));
-            sb.append(user).append(": ").append(comment).append("\n\n");
+            long id = cursor.getLong(cursor.getColumnIndexOrThrow("_id"));
+            long uId = cursor.getLong(cursor.getColumnIndexOrThrow("user_id"));
+            String user = cursor.getString(cursor.getColumnIndexOrThrow("username"));
+            float rating = cursor.getFloat(cursor.getColumnIndexOrThrow("rating"));
+            String comment = cursor.getString(cursor.getColumnIndexOrThrow("comment"));
+            String time = cursor.getString(cursor.getColumnIndexOrThrow("timestamp"));
+            reviews.add(new PublicReview(id, uId, user, rating, comment, time));
         }
         cursor.close();
-        tvReviews.setText(sb.length() > 0 ? sb.toString() : "暂无评论，快来抢沙发！");
+        reviewAdapter.setReviews(reviews);
+    }
+
+    private void startReading() {
+        Book book = dbHelper.getBook(bookId);
+        if (book != null && book.getFilePath() != null && !book.getFilePath().isEmpty()) {
+            Intent intent = new Intent(this, ReadActivity.class);
+            intent.putExtra("book_path", book.getFilePath());
+            intent.putExtra("book_title", book.getTitle());
+            startActivity(intent);
+        } else {
+            Toast.makeText(this, "未关联电子书", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void showDeleteConfirmation() {
+        new AlertDialog.Builder(this).setTitle("删除").setMessage("确定删除吗？").setPositiveButton("删除", (d, w) -> { dbHelper.deleteBook(bookId); finish(); }).setNegativeButton("取消", null).show();
+    }
+
+    private void updateFavoriteButtonState(boolean isFav) {
+        btnFav.setChecked(isFav);
+        btnFav.setText(isFav?"已收藏":"收藏");
     }
 }

@@ -1,33 +1,40 @@
 package com.example.mylibrary;
 
-import android.content.ContentValues;
 import android.content.Intent;
-import android.database.sqlite.SQLiteDatabase;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.RatingBar;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import com.bumptech.glide.Glide;
-import com.example.mylibrary.BookContract.BookEntry;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 public class AddBookActivity extends AppCompatActivity {
 
     private EditText etTitle, etAuthor;
     private RatingBar ratingBar;
+    private Spinner spinnerStatus;
     private ImageView ivPreview;
-    private TextView tvHeader; // 标题文本
-    private Button btnSave;
+    private Button btnSave, btnImportFile;
+    private TextView tvFileStatus;
+
     private BookDbHelper dbHelper;
     private Uri selectedImageUri = null;
-
-    private long mBookId = -1; // 如果是 -1 表示添加模式，否则是编辑模式
+    private Uri selectedFileUri = null;
+    private long mBookId = -1;
 
     private final ActivityResultLauncher<String[]> pickImageLauncher = registerForActivityResult(
             new ActivityResultContracts.OpenDocument(),
@@ -35,14 +42,18 @@ public class AddBookActivity extends AppCompatActivity {
                 if (uri != null) {
                     selectedImageUri = uri;
                     Glide.with(this).load(uri).into(ivPreview);
+                    try { getContentResolver().takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION); } catch (Exception e) {}
+                }
+            }
+    );
 
-                    // 获取持久化权限 (这对 OpenDocument 是有效的)
-                    try {
-                        getContentResolver().takePersistableUriPermission(uri,
-                                Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                    } catch (SecurityException e) {
-                        e.printStackTrace();
-                    }
+    private final ActivityResultLauncher<String[]> pickFileLauncher = registerForActivityResult(
+            new ActivityResultContracts.OpenDocument(),
+            uri -> {
+                if (uri != null) {
+                    selectedFileUri = uri;
+                    tvFileStatus.setText("已选择: " + uri.getLastPathSegment());
+                    try { getContentResolver().takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION); } catch (Exception e) {}
                 }
             }
     );
@@ -56,24 +67,24 @@ public class AddBookActivity extends AppCompatActivity {
         etTitle = findViewById(R.id.et_title);
         etAuthor = findViewById(R.id.et_author);
         ratingBar = findViewById(R.id.rating_bar_input);
+        spinnerStatus = findViewById(R.id.spinner_status);
         ivPreview = findViewById(R.id.iv_add_preview);
         btnSave = findViewById(R.id.btn_save);
+        btnImportFile = findViewById(R.id.btn_import_file);
+        tvFileStatus = findViewById(R.id.tv_file_status);
 
-        // 这里的 ID 需要你去 activity_add_book.xml 里给顶部的 "Add New Book" TextView 加一个 id="@+id/tv_header_title"
-        // 如果懒得加，可以把下面这行注释掉
-        // tvHeader = findViewById(R.id.tv_header_title);
+        String[] statuses = {"想看", "阅读中", "已读"};
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, statuses);
+        spinnerStatus.setAdapter(adapter);
 
-        // [修改点 2] 启动参数改为 String 数组
         ivPreview.setOnClickListener(v -> pickImageLauncher.launch(new String[]{"image/*"}));
+        btnImportFile.setOnClickListener(v -> pickFileLauncher.launch(new String[]{"text/plain"}));
         btnSave.setOnClickListener(v -> saveBook());
 
-        // --- 检查是否是编辑模式 ---
         mBookId = getIntent().getLongExtra("book_id", -1);
         if (mBookId != -1) {
-            // 编辑模式：加载已有数据
             loadBookData(mBookId);
-            btnSave.setText("更新书籍"); // 按钮文字变一下
-            // if (tvHeader != null) tvHeader.setText("编辑书籍");
+            btnSave.setText("更新书籍");
         }
     }
 
@@ -83,9 +94,14 @@ public class AddBookActivity extends AppCompatActivity {
             etTitle.setText(book.getTitle());
             etAuthor.setText(book.getAuthor());
             ratingBar.setRating(book.getRating());
+            spinnerStatus.setSelection(book.getStatus());
             if (book.getImageUri() != null && !book.getImageUri().isEmpty()) {
                 selectedImageUri = Uri.parse(book.getImageUri());
-                Glide.with(this).load(selectedImageUri).into(ivPreview);
+                Glide.with(this).load(book.getImageUri()).into(ivPreview);
+            }
+            if (book.getFilePath() != null && !book.getFilePath().isEmpty()) {
+                selectedFileUri = Uri.parse(book.getFilePath());
+                tvFileStatus.setText("已关联电子书");
             }
         }
     }
@@ -94,28 +110,58 @@ public class AddBookActivity extends AppCompatActivity {
         String title = etTitle.getText().toString().trim();
         String author = etAuthor.getText().toString().trim();
         float rating = ratingBar.getRating();
-        String imageUriStr = selectedImageUri != null ? selectedImageUri.toString() : "";
+        int status = spinnerStatus.getSelectedItemPosition();
+
+        SharedPreferences prefs = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        long userId = prefs.getLong("current_user_id", -1);
+        if (userId == -1) { finish(); return; }
 
         if (title.isEmpty() || author.isEmpty()) {
             Toast.makeText(this, "请输入完整信息", Toast.LENGTH_SHORT).show();
             return;
         }
 
+        String finalImagePath = "";
+        if (selectedImageUri != null) {
+            if ("content".equals(selectedImageUri.getScheme())) finalImagePath = copyImageToInternalStorage(selectedImageUri);
+            else finalImagePath = selectedImageUri.toString();
+        } else if (mBookId != -1) {
+            Book oldBook = dbHelper.getBook(mBookId);
+            if (oldBook != null) finalImagePath = oldBook.getImageUri();
+        }
+
+        String finalFilePath = "";
+        if (selectedFileUri != null) {
+            finalFilePath = selectedFileUri.toString();
+        } else if (mBookId != -1) {
+            Book oldBook = dbHelper.getBook(mBookId);
+            if (oldBook != null) finalFilePath = oldBook.getFilePath();
+        }
+
         if (mBookId == -1) {
-            // 添加模式
-            SQLiteDatabase db = dbHelper.getWritableDatabase();
-            ContentValues values = new ContentValues();
-            values.put(BookEntry.COLUMN_TITLE, title);
-            values.put(BookEntry.COLUMN_AUTHOR, author);
-            values.put(BookEntry.COLUMN_RATING, rating);
-            values.put(BookEntry.COLUMN_IMAGE_URI, imageUriStr);
-            db.insert(BookEntry.TABLE_NAME, null, values);
+            // [修复] 传入 finalFilePath
+            dbHelper.addBook(userId, title, author, rating, finalImagePath, status, finalFilePath);
             Toast.makeText(this, "添加成功", Toast.LENGTH_SHORT).show();
         } else {
-            // 编辑模式
-            dbHelper.updateBook(mBookId, title, author, rating, imageUriStr);
+            // [修复] 传入 finalFilePath
+            dbHelper.updateBook(mBookId, title, author, rating, finalImagePath, status, finalFilePath);
             Toast.makeText(this, "更新成功", Toast.LENGTH_SHORT).show();
         }
         finish();
+    }
+
+    private String copyImageToInternalStorage(Uri uri) {
+        try {
+            String filename = "IMG_" + System.currentTimeMillis() + ".jpg";
+            File file = new File(getFilesDir(), filename);
+            InputStream inputStream = getContentResolver().openInputStream(uri);
+            OutputStream outputStream = new FileOutputStream(file);
+            byte[] buffer = new byte[1024];
+            int length;
+            while ((length = inputStream.read(buffer)) > 0) outputStream.write(buffer, 0, length);
+            outputStream.close();
+            inputStream.close();
+            return file.getAbsolutePath();
+        } catch (Exception e) { e.printStackTrace(); return ""; }
     }
 }

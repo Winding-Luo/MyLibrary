@@ -1,15 +1,18 @@
 package com.example.mylibrary;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.SearchView;
+import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -23,6 +26,10 @@ public class HomeFragment extends Fragment {
     private BookAdapter adapter;
     private RecyclerView recyclerView;
 
+    private String currentKeyword = "";
+    private int currentStatusFilter = -1; // -1:全部, 0:想看, 1:阅读中, 2:已读
+    private String currentSortOrder = "time"; // time, rating, status
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -31,45 +38,36 @@ public class HomeFragment extends Fragment {
         dbHelper = new BookDbHelper(requireContext());
         recyclerView = view.findViewById(R.id.recycler_view_home);
         SearchView searchView = view.findViewById(R.id.search_view);
+        Toolbar toolbar = view.findViewById(R.id.toolbar_home);
 
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         adapter = new BookAdapter();
 
-        // 点击跳转详情
         adapter.setOnItemClickListener(book -> {
             Intent intent = new Intent(requireContext(), BookDetailActivity.class);
             intent.putExtra("book_id", book.getId());
-            intent.putExtra("book_title", book.getTitle());
             startActivity(intent);
         });
 
         recyclerView.setAdapter(adapter);
 
-        // [修改点] 这里必须使用 setOnBookLongClickListener，与 BookAdapter 中的定义保持一致
-        adapter.setOnBookLongClickListener(book -> {
-            new androidx.appcompat.app.AlertDialog.Builder(requireContext())
-                    .setTitle("删除书籍")
-                    .setMessage("确定要删除《" + book.getTitle() + "》吗？此操作不可恢复。")
-                    .setPositiveButton("删除", (dialog, which) -> {
-                        dbHelper.deleteBook(book.getId());
-                        loadBooks(""); // 刷新列表
-                        android.widget.Toast.makeText(requireContext(), "已删除", android.widget.Toast.LENGTH_SHORT).show();
-                    })
-                    .setNegativeButton("取消", null)
-                    .show();
-        });
+        // 设置 Toolbar 菜单
+        if (toolbar != null) {
+            toolbar.setOnMenuItemClickListener(this::onToolbarMenuItemClick);
+        }
 
-        // 搜索功能逻辑
+        // 搜索逻辑
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
-                loadBooks(query);
+                currentKeyword = query;
+                loadBooks();
                 return true;
             }
-
             @Override
             public boolean onQueryTextChange(String newText) {
-                loadBooks(newText);
+                currentKeyword = newText;
+                loadBooks();
                 return true;
             }
         });
@@ -77,24 +75,41 @@ public class HomeFragment extends Fragment {
         return view;
     }
 
+    private boolean onToolbarMenuItemClick(MenuItem item) {
+        int id = item.getItemId();
+        if (id == R.id.sort_time) {
+            currentSortOrder = "time";
+        } else if (id == R.id.sort_rating) {
+            currentSortOrder = "rating";
+        } else if (id == R.id.sort_status) {
+            currentSortOrder = "status";
+        } else if (id == R.id.filter_all) {
+            currentStatusFilter = -1;
+        } else if (id == R.id.filter_todo) {
+            currentStatusFilter = 0;
+        } else if (id == R.id.filter_reading) {
+            currentStatusFilter = 1;
+        } else if (id == R.id.filter_read) {
+            currentStatusFilter = 2;
+        }
+        loadBooks();
+        return true;
+    }
+
     @Override
     public void onResume() {
         super.onResume();
-        loadBooks(""); // 默认加载所有
+        loadBooks();
     }
 
-    private void loadBooks(String queryStr) {
+    private void loadBooks() {
         if (getContext() == null) return;
+        SharedPreferences prefs = requireContext().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
+        long currentUserId = prefs.getLong("current_user_id", -1);
 
         List<Book> books = new ArrayList<>();
-        Cursor cursor;
-
-        if (queryStr == null || queryStr.trim().isEmpty()) {
-            SQLiteDatabase db = dbHelper.getReadableDatabase();
-            cursor = db.query(BookEntry.TABLE_NAME, null, null, null, null, null, BookEntry._ID + " DESC");
-        } else {
-            cursor = dbHelper.searchBooks(queryStr);
-        }
+        // 确保调用的是支持所有参数的 queryBooks
+        Cursor cursor = dbHelper.queryBooks(currentUserId, currentKeyword, currentStatusFilter, currentSortOrder);
 
         while (cursor.moveToNext()) {
             long id = cursor.getLong(cursor.getColumnIndexOrThrow(BookEntry._ID));
@@ -102,7 +117,25 @@ public class HomeFragment extends Fragment {
             String author = cursor.getString(cursor.getColumnIndexOrThrow(BookEntry.COLUMN_AUTHOR));
             float rating = cursor.getFloat(cursor.getColumnIndexOrThrow(BookEntry.COLUMN_RATING));
             String imageUri = cursor.getString(cursor.getColumnIndexOrThrow(BookEntry.COLUMN_IMAGE_URI));
-            books.add(new Book(id, title, author, rating, imageUri));
+
+            // 兼容读取 status
+            int status = 0;
+            try {
+                status = cursor.getInt(cursor.getColumnIndexOrThrow("status"));
+            } catch (Exception e) {
+                // Ignore
+            }
+
+            // [新增] 兼容读取 filePath
+            String filePath = "";
+            try {
+                filePath = cursor.getString(cursor.getColumnIndexOrThrow("file_path"));
+            } catch (Exception e) {
+                // Ignore
+            }
+
+            // [修改] 使用完整的 7 参数构造函数
+            books.add(new Book(id, title, author, rating, imageUri, status, filePath));
         }
         cursor.close();
         adapter.setBooks(books);

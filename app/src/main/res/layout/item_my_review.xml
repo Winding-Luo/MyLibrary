@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="#FFFFFF"
+    android:layout_marginBottom="1dp">
+
+    <TextView
+        android:id="@+id/tv_my_review_book"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="《Book Name》"
+        android:textStyle="bold"
+        android:textColor="#333333"/>
+
+    <TextView
+        android:id="@+id/tv_my_review_rating"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="5.0分"
+        android:textSize="12sp"
+        android:textColor="#FF9800"/>
+
+    <TextView
+        android:id="@+id/tv_my_review_content"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Content..."
+        android:layout_marginVertical="8dp"/>
+
+    <TextView
+        android:id="@+id/tv_my_review_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="2023-01-01"
+        android:textSize="10sp"
+        android:textColor="#999999"/>
+</LinearLayout>
