@@ -76,9 +76,11 @@ public class UserManageActivity extends AppCompatActivity {
             Glide.with(this)
                     .load(uri)
                     .apply(RequestOptions.circleCropTransform())
+                    .placeholder(R.drawable.ic_default_avatar)
+                    .error(R.drawable.ic_default_avatar)
                     .into(ivAvatar);
         } else {
-            ivAvatar.setImageResource(R.mipmap.ic_launcher_round);
+            ivAvatar.setImageResource(R.drawable.ic_default_avatar);
         }
     }
 

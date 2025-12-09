@@ -80,9 +80,12 @@ public class ProfileFragment extends Fragment {
                 Glide.with(this)
                         .load(avatarUri)
                         .apply(RequestOptions.circleCropTransform())
+                        .placeholder(R.drawable.ic_default_avatar)
+                        .error(R.drawable.ic_default_avatar)
                         .into(ivAvatar);
             } else {
-                ivAvatar.setImageResource(R.mipmap.ic_launcher_round);
+                // 使用新的默认头像
+                ivAvatar.setImageResource(R.drawable.ic_default_avatar);
             }
         }
         cursor.close();

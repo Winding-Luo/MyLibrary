@@ -8,15 +8,12 @@ import android.database.sqlite.SQLiteOpenHelper;
 import com.example.mylibrary.BookContract.*;
 
 public class BookDbHelper extends SQLiteOpenHelper {
-    public static final int DATABASE_VERSION = 9; // [版本升级]
+    public static final int DATABASE_VERSION = 9;
     public static final String DATABASE_NAME = "MyLibrary.db";
 
     // --- 表定义 ---
     private static final String SQL_CREATE_BOOK_TABLE = "CREATE TABLE " + BookEntry.TABLE_NAME + " (" + BookEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT," + BookEntry.COLUMN_TITLE + " TEXT," + BookEntry.COLUMN_AUTHOR + " TEXT," + BookEntry.COLUMN_RATING + " REAL," + BookEntry.COLUMN_IMAGE_URI + " TEXT," + "owner_id INTEGER," + "status INTEGER DEFAULT 0," + "file_path TEXT)";
-
-    // [修改] 增加 avatar_uri
     private static final String SQL_CREATE_USER_TABLE = "CREATE TABLE " + UserEntry.TABLE_NAME + " (" + UserEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " + UserEntry.COLUMN_USERNAME + " TEXT UNIQUE, " + UserEntry.COLUMN_PASSWORD + " TEXT, " + UserEntry.COLUMN_AVATAR_URI + " TEXT)";
-
     private static final String SQL_CREATE_FAVORITE_TABLE = "CREATE TABLE " + FavoriteEntry.TABLE_NAME + " (" + FavoriteEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " + FavoriteEntry.COLUMN_USER_ID + " INTEGER, " + FavoriteEntry.COLUMN_BOOK_ID + " INTEGER)";
     public static final String TABLE_PUBLIC_BOOKS = "public_books";
     private static final String SQL_CREATE_PUBLIC_BOOKS = "CREATE TABLE " + TABLE_PUBLIC_BOOKS + " (" + "_id INTEGER PRIMARY KEY AUTOINCREMENT, " + "title TEXT, author TEXT, image_uri TEXT, " + "shared_by_user_id INTEGER, " + "shared_time DATETIME DEFAULT CURRENT_TIMESTAMP)";
@@ -55,7 +52,27 @@ public class BookDbHelper extends SQLiteOpenHelper {
         onCreate(db);
     }
 
-    // --- [新增] 用户管理 ---
+    // --- 新增：根据用户名获取头像 URI ---
+    public String getAvatarByUsername(String username) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        String uri = null;
+        Cursor cursor = null;
+        try {
+            cursor = db.query(UserEntry.TABLE_NAME,
+                    new String[]{UserEntry.COLUMN_AVATAR_URI},
+                    UserEntry.COLUMN_USERNAME + "=?",
+                    new String[]{username}, null, null, null);
+            if (cursor != null && cursor.moveToFirst()) {
+                uri = cursor.getString(0);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (cursor != null) cursor.close();
+        }
+        return uri;
+    }
+
     public Cursor getUser(long userId) {
         SQLiteDatabase db = this.getReadableDatabase();
         return db.query(UserEntry.TABLE_NAME, null, UserEntry._ID + "=?", new String[]{String.valueOf(userId)}, null, null, null);
@@ -72,7 +89,6 @@ public class BookDbHelper extends SQLiteOpenHelper {
         db.update(UserEntry.TABLE_NAME, values, UserEntry._ID + "=?", new String[]{String.valueOf(userId)});
     }
 
-    // --- 广场查重添加 ---
     public boolean addBookFromSquare(long userId, long publicBookId) {
         SQLiteDatabase db = this.getWritableDatabase();
         Cursor cursor = db.query(TABLE_PUBLIC_BOOKS, null, "_id=?", new String[]{String.valueOf(publicBookId)}, null, null, null);
@@ -82,7 +98,6 @@ public class BookDbHelper extends SQLiteOpenHelper {
             String imageUri = cursor.getString(cursor.getColumnIndexOrThrow("image_uri"));
             cursor.close();
 
-            // 查重：私有库是否已有该书
             Cursor checkCursor = db.query(BookEntry.TABLE_NAME, null,
                     "owner_id=? AND " + BookEntry.COLUMN_TITLE + "=? AND " + BookEntry.COLUMN_AUTHOR + "=?",
                     new String[]{String.valueOf(userId), title, author}, null, null, null);
@@ -99,7 +114,6 @@ public class BookDbHelper extends SQLiteOpenHelper {
         return false;
     }
 
-    // --- 其他核心功能 ---
     public boolean shareBookToSquare(long privateBookId, long userId) {
         SQLiteDatabase db = this.getWritableDatabase();
         Book book = getBook(privateBookId);
@@ -180,7 +194,6 @@ public class BookDbHelper extends SQLiteOpenHelper {
         return db.query(BookEntry.TABLE_NAME, null, selection.toString(), argsList.toArray(new String[0]), null, null, orderBy);
     }
 
-    // 用户、评论、点赞、回复等辅助方法
     public long registerUser(String username, String password) { SQLiteDatabase db = this.getWritableDatabase(); ContentValues values = new ContentValues(); values.put(UserEntry.COLUMN_USERNAME, username); values.put(UserEntry.COLUMN_PASSWORD, password); return db.insert(UserEntry.TABLE_NAME, null, values); }
     public long loginUser(String username, String password) { SQLiteDatabase db = this.getReadableDatabase(); Cursor cursor = db.query(UserEntry.TABLE_NAME, new String[]{UserEntry._ID}, UserEntry.COLUMN_USERNAME + "=? AND " + UserEntry.COLUMN_PASSWORD + "=?", new String[]{username, password}, null, null, null); long userId = -1; if (cursor.moveToFirst()) userId = cursor.getLong(0); cursor.close(); return userId; }
     public Cursor getSquareBooks() { SQLiteDatabase db = this.getReadableDatabase(); return db.rawQuery("SELECT pb.*, u." + UserEntry.COLUMN_USERNAME + " as shared_by_name FROM " + TABLE_PUBLIC_BOOKS + " pb LEFT JOIN " + UserEntry.TABLE_NAME + " u ON pb.shared_by_user_id = u." + UserEntry._ID + " ORDER BY pb._id DESC", null); }
