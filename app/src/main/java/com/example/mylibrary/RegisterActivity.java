@@ -27,21 +27,21 @@ public class RegisterActivity extends AppCompatActivity {
             String confirmPass = etConfirmPassword.getText().toString();
 
             if (user.isEmpty() || pass.isEmpty() || confirmPass.isEmpty()) {
-                Toast.makeText(this, "请输入完整信息", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.input_complete_info, Toast.LENGTH_SHORT).show();
                 return;
             }
 
             if (!pass.equals(confirmPass)) {
-                Toast.makeText(this, "两次输入的密码不一致", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.password_mismatch, Toast.LENGTH_SHORT).show();
                 return;
             }
 
             long id = dbHelper.registerUser(user, pass);
             if (id != -1) {
-                Toast.makeText(this, "注册成功，请登录", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.register_success, Toast.LENGTH_SHORT).show();
                 finish();
             } else {
-                Toast.makeText(this, "注册失败，用户名可能已存在", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.register_fail, Toast.LENGTH_SHORT).show();
             }
         });
     }

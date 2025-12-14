@@ -32,14 +32,11 @@ public class LoginActivity extends AppCompatActivity {
         Button btnLogin = findViewById(R.id.btn_login);
         TextView btnRegister = findViewById(R.id.btn_go_register);
 
-        // 监听用户名输入，动态加载头像
         etUsername.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {}
-
             @Override
             public void afterTextChanged(Editable s) {
                 String username = s.toString().trim();
@@ -62,11 +59,11 @@ public class LoginActivity extends AppCompatActivity {
                         .putString("username", user)
                         .apply();
 
-                Toast.makeText(this, "登录成功", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.login_success, Toast.LENGTH_SHORT).show();
                 startActivity(new Intent(this, MainActivity.class));
                 finish();
             } else {
-                Toast.makeText(this, "Invalid username or password", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.login_fail, Toast.LENGTH_SHORT).show();
             }
         });
 

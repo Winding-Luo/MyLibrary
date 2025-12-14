@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFFFF">
+    android:background="@color/colorBackground">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -11,106 +12,169 @@
         android:padding="24dp">
 
         <TextView
-            android:id="@+id/tv_header_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Add New Book"
+            android:text="@string/add_new_book"
             android:textSize="24sp"
             android:textStyle="bold"
+            android:textColor="@color/colorTextPrimary"
             android:layout_marginBottom="24dp"/>
 
-        <FrameLayout
-            android:layout_width="120dp"
-            android:layout_height="160dp"
+        <androidx.cardview.widget.CardView
+            android:layout_width="140dp"
+            android:layout_height="200dp"
             android:layout_gravity="center_horizontal"
-            android:layout_marginBottom="24dp">
+            app:cardCornerRadius="12dp"
+            app:cardElevation="4dp"
+            app:cardBackgroundColor="@color/colorSurface"
+            android:layout_marginBottom="16dp">
 
-            <ImageView
-                android:id="@+id/iv_add_preview"
+            <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:src="@android:drawable/ic_menu_gallery"
-                android:scaleType="centerCrop"
-                android:background="#EEEEEE"/>
+                android:layout_height="match_parent">
+                <ImageView
+                    android:id="@+id/iv_add_preview"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@android:drawable/ic_menu_gallery"
+                    android:scaleType="centerCrop"
+                    android:padding="40dp"
+                    app:tint="#DDDDDD"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="封面预览"
+                    android:textSize="12sp"
+                    android:textColor="@color/colorPrimary"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:layout_marginBottom="16dp"
+                    android:background="@drawable/bg_status_tag"
+                    android:backgroundTint="#EEF2FF"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="4dp"/>
+            </FrameLayout>
+        </androidx.cardview.widget.CardView>
 
+        <Button
+            android:id="@+id/btn_take_photo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/camera_btn_text"
+            android:layout_gravity="center_horizontal"
+            app:icon="@android:drawable/ic_menu_camera"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_marginBottom="24dp"/>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="书名"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            app:boxCornerRadiusTopStart="12dp"
+            app:boxCornerRadiusTopEnd="12dp"
+            app:boxCornerRadiusBottomStart="12dp"
+            app:boxCornerRadiusBottomEnd="12dp"
+            android:layout_marginBottom="16dp">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/et_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="作者"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            app:boxCornerRadiusTopStart="12dp"
+            app:boxCornerRadiusTopEnd="12dp"
+            app:boxCornerRadiusBottomStart="12dp"
+            app:boxCornerRadiusBottomEnd="12dp"
+            android:layout_marginBottom="24dp">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/et_author"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="16dp">
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Tap to Add Cover"
-                android:textSize="12sp"
-                android:layout_gravity="bottom|center_horizontal"
-                android:background="#80000000"
-                android:textColor="#FFF"
-                android:padding="4dp"/>
-        </FrameLayout>
+                android:text="评分："
+                android:textColor="@color/colorTextPrimary"
+                android:textSize="16sp"/>
+            <RatingBar
+                android:id="@+id/rating_bar_input"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                style="?android:attr/ratingBarStyleIndicator"
+                android:isIndicator="false"
+                android:numStars="5"
+                android:stepSize="0.5"
+                android:rating="0"
+                android:progressTint="@color/colorSecondary"/>
+        </LinearLayout>
 
-        <EditText
-            android:id="@+id/et_title"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Book Title"
-            android:layout_marginBottom="16dp"/>
-
-        <EditText
-            android:id="@+id/et_author"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Author Name"
-            android:layout_marginBottom="24dp"/>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Rating:"
-            android:textSize="16sp"
-            android:layout_marginBottom="8dp"/>
-
-        <RatingBar
-            android:id="@+id/rating_bar_input"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:numStars="5"
-            android:stepSize="0.5"
-            android:rating="0"
-            android:layout_marginBottom="24dp"/>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Status:"
-            android:textSize="16sp"
-            android:layout_marginBottom="8dp"/>
-
-        <Spinner
-            android:id="@+id/spinner_status"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:minHeight="48dp"
-            android:layout_marginBottom="24dp"/>
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="24dp"
+            android:background="@drawable/bg_status_tag"
+            android:backgroundTint="@color/colorSurface"
+            android:padding="4dp">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="阅读状态："
+                android:layout_marginStart="12dp"
+                android:textColor="@color/colorTextPrimary"
+                android:textSize="16sp"/>
+            <Spinner
+                android:id="@+id/spinner_status"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginStart="16dp"/>
+        </LinearLayout>
 
         <Button
             android:id="@+id/btn_import_file"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="导入电子书 (.txt)"
-            android:backgroundTint="#673AB7"
+            android:layout_height="56dp"
+            android:text="@string/import_ebook"
+            app:icon="@android:drawable/ic_menu_agenda"
+            android:textColor="@color/colorPrimary"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            app:strokeColor="@color/colorPrimary"
+            app:cornerRadius="12dp"
             android:layout_marginBottom="8dp"/>
 
         <TextView
             android:id="@+id/tv_file_status"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="未选择文件"
+            android:text="@string/no_file_selected"
             android:gravity="center"
-            android:textColor="#757575"
-            android:layout_marginBottom="24dp"/>
+            android:textColor="@color/colorTextSecondary"
+            android:textSize="12sp"
+            android:layout_marginBottom="32dp"/>
 
         <Button
             android:id="@+id/btn_save"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Save Book"
-            android:backgroundTint="#2196F3"/>
+            android:layout_height="60dp"
+            android:text="@string/save_book"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:cornerRadius="30dp"
+            android:backgroundTint="@color/colorPrimary"/>
 
     </LinearLayout>
 </ScrollView>

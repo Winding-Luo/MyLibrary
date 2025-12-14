@@ -1,9 +1,13 @@
 package com.example.mylibrary;
 
+import android.Manifest;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
+import android.provider.MediaStore;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -14,13 +18,20 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
 import com.bumptech.glide.Glide;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 public class AddBookActivity extends AppCompatActivity {
 
@@ -28,14 +39,27 @@ public class AddBookActivity extends AppCompatActivity {
     private RatingBar ratingBar;
     private Spinner spinnerStatus;
     private ImageView ivPreview;
-    private Button btnSave, btnImportFile;
+    private Button btnSave, btnImportFile, btnTakePhoto;
     private TextView tvFileStatus;
 
     private BookDbHelper dbHelper;
     private Uri selectedImageUri = null;
     private Uri selectedFileUri = null;
+    private Uri photoUri = null;
     private long mBookId = -1;
 
+    // 拍照回调
+    private final ActivityResultLauncher<Uri> takePictureLauncher = registerForActivityResult(
+            new ActivityResultContracts.TakePicture(),
+            success -> {
+                if (success && photoUri != null) {
+                    selectedImageUri = photoUri;
+                    Glide.with(this).load(photoUri).into(ivPreview);
+                }
+            }
+    );
+
+    // 相册选择回调
     private final ActivityResultLauncher<String[]> pickImageLauncher = registerForActivityResult(
             new ActivityResultContracts.OpenDocument(),
             uri -> {
@@ -47,12 +71,13 @@ public class AddBookActivity extends AppCompatActivity {
             }
     );
 
+    // 文件选择回调
     private final ActivityResultLauncher<String[]> pickFileLauncher = registerForActivityResult(
             new ActivityResultContracts.OpenDocument(),
             uri -> {
                 if (uri != null) {
                     selectedFileUri = uri;
-                    tvFileStatus.setText("已选择: " + uri.getLastPathSegment());
+                    tvFileStatus.setText(String.format(getString(R.string.file_selected), uri.getLastPathSegment()));
                     try { getContentResolver().takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION); } catch (Exception e) {}
                 }
             }
@@ -72,20 +97,66 @@ public class AddBookActivity extends AppCompatActivity {
         btnSave = findViewById(R.id.btn_save);
         btnImportFile = findViewById(R.id.btn_import_file);
         tvFileStatus = findViewById(R.id.tv_file_status);
+        btnTakePhoto = findViewById(R.id.btn_take_photo);
 
-        String[] statuses = {"想看", "阅读中", "已读"};
+        String[] statuses = {
+                getString(R.string.status_todo),
+                getString(R.string.status_reading),
+                getString(R.string.status_read)
+        };
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, statuses);
         spinnerStatus.setAdapter(adapter);
 
         ivPreview.setOnClickListener(v -> pickImageLauncher.launch(new String[]{"image/*"}));
+        btnTakePhoto.setOnClickListener(v -> checkCameraPermission());
         btnImportFile.setOnClickListener(v -> pickFileLauncher.launch(new String[]{"text/plain"}));
         btnSave.setOnClickListener(v -> saveBook());
 
         mBookId = getIntent().getLongExtra("book_id", -1);
         if (mBookId != -1) {
             loadBookData(mBookId);
-            btnSave.setText("更新书籍");
+            btnSave.setText(R.string.update_book);
+        } else {
+            btnSave.setText(R.string.save_book);
         }
+    }
+
+    private void checkCameraPermission() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, 100);
+        } else {
+            launchCamera();
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == 100 && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            launchCamera();
+        } else {
+            Toast.makeText(this, R.string.camera_permission_needed, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void launchCamera() {
+        try {
+            File photoFile = createImageFile();
+            if (photoFile != null) {
+                photoUri = FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", photoFile);
+                takePictureLauncher.launch(photoUri);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            Toast.makeText(this, R.string.camera_launch_fail, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private File createImageFile() throws java.io.IOException {
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+        String imageFileName = "JPEG_" + timeStamp + "_";
+        File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+        return File.createTempFile(imageFileName, ".jpg", storageDir);
     }
 
     private void loadBookData(long id) {
@@ -101,7 +172,7 @@ public class AddBookActivity extends AppCompatActivity {
             }
             if (book.getFilePath() != null && !book.getFilePath().isEmpty()) {
                 selectedFileUri = Uri.parse(book.getFilePath());
-                tvFileStatus.setText("已关联电子书");
+                tvFileStatus.setText(R.string.file_associated);
             }
         }
     }
@@ -117,37 +188,39 @@ public class AddBookActivity extends AppCompatActivity {
         if (userId == -1) { finish(); return; }
 
         if (title.isEmpty() || author.isEmpty()) {
-            Toast.makeText(this, "请输入完整信息", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.input_complete_info, Toast.LENGTH_SHORT).show();
             return;
         }
 
-        String finalImagePath = "";
-        if (selectedImageUri != null) {
-            if ("content".equals(selectedImageUri.getScheme())) finalImagePath = copyImageToInternalStorage(selectedImageUri);
-            else finalImagePath = selectedImageUri.toString();
-        } else if (mBookId != -1) {
-            Book oldBook = dbHelper.getBook(mBookId);
-            if (oldBook != null) finalImagePath = oldBook.getImageUri();
-        }
+        new Thread(() -> {
+            String finalImagePath = "";
+            if (selectedImageUri != null) {
+                if ("content".equals(selectedImageUri.getScheme())) finalImagePath = copyImageToInternalStorage(selectedImageUri);
+                else finalImagePath = selectedImageUri.toString();
+            } else if (mBookId != -1) {
+                Book oldBook = dbHelper.getBook(mBookId);
+                if (oldBook != null) finalImagePath = oldBook.getImageUri();
+            }
 
-        String finalFilePath = "";
-        if (selectedFileUri != null) {
-            finalFilePath = selectedFileUri.toString();
-        } else if (mBookId != -1) {
-            Book oldBook = dbHelper.getBook(mBookId);
-            if (oldBook != null) finalFilePath = oldBook.getFilePath();
-        }
+            String finalFilePath = "";
+            if (selectedFileUri != null) {
+                finalFilePath = selectedFileUri.toString();
+            } else if (mBookId != -1) {
+                Book oldBook = dbHelper.getBook(mBookId);
+                if (oldBook != null) finalFilePath = oldBook.getFilePath();
+            }
 
-        if (mBookId == -1) {
-            // [修复] 传入 finalFilePath
-            dbHelper.addBook(userId, title, author, rating, finalImagePath, status, finalFilePath);
-            Toast.makeText(this, "添加成功", Toast.LENGTH_SHORT).show();
-        } else {
-            // [修复] 传入 finalFilePath
-            dbHelper.updateBook(mBookId, title, author, rating, finalImagePath, status, finalFilePath);
-            Toast.makeText(this, "更新成功", Toast.LENGTH_SHORT).show();
-        }
-        finish();
+            if (mBookId == -1) {
+                dbHelper.addBook(userId, title, author, rating, finalImagePath, status, finalFilePath);
+            } else {
+                dbHelper.updateBook(mBookId, title, author, rating, finalImagePath, status, finalFilePath);
+            }
+
+            runOnUiThread(() -> {
+                Toast.makeText(this, mBookId == -1 ? R.string.add_success : R.string.update_success, Toast.LENGTH_SHORT).show();
+                finish();
+            });
+        }).start();
     }
 
     private String copyImageToInternalStorage(Uri uri) {

@@ -82,7 +82,7 @@ public class BookDetailActivity extends AppCompatActivity {
             btnRead.setOnClickListener(v -> startReading());
             btnShare.setOnClickListener(v -> {
                 boolean success = dbHelper.shareBookToSquare(bookId, userId);
-                Toast.makeText(this, success ? "已分享到广场" : "广场上已存在这本书", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, success ? R.string.share_success : R.string.share_fail, Toast.LENGTH_SHORT).show();
             });
             fabEdit.setOnClickListener(v -> {
                 Intent intent = new Intent(this, AddBookActivity.class);
@@ -97,13 +97,12 @@ public class BookDetailActivity extends AppCompatActivity {
                 updateFavoriteButtonState(newStatus);
             });
         } else {
-            // [修改] 处理添加结果
             btnAddToLib.setOnClickListener(v -> {
                 boolean success = dbHelper.addBookFromSquare(userId, bookId);
                 if (success) {
-                    Toast.makeText(this, "已加入你的图书馆", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, R.string.add_to_lib_success, Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(this, "你的图书馆里已经有这本书了", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, R.string.add_to_lib_fail, Toast.LENGTH_SHORT).show();
                 }
             });
 
@@ -111,7 +110,7 @@ public class BookDetailActivity extends AppCompatActivity {
                 String comment = etComment.getText().toString();
                 if (comment.isEmpty()) return;
                 dbHelper.addPublicReview(userId, bookId, reviewRatingBar.getRating(), comment);
-                Toast.makeText(this, "评论成功", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.review_success, Toast.LENGTH_SHORT).show();
                 etComment.setText("");
                 loadPublicReviews();
             });
@@ -188,16 +187,21 @@ public class BookDetailActivity extends AppCompatActivity {
             intent.putExtra("book_title", book.getTitle());
             startActivity(intent);
         } else {
-            Toast.makeText(this, "未关联电子书", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.no_ebook, Toast.LENGTH_SHORT).show();
         }
     }
 
     private void showDeleteConfirmation() {
-        new AlertDialog.Builder(this).setTitle("删除").setMessage("确定删除吗？").setPositiveButton("删除", (d, w) -> { dbHelper.deleteBook(bookId); finish(); }).setNegativeButton("取消", null).show();
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.delete_confirm_title)
+                .setMessage(R.string.delete_confirm_msg)
+                .setPositiveButton(R.string.btn_delete, (d, w) -> { dbHelper.deleteBook(bookId); finish(); })
+                .setNegativeButton(R.string.cancel, null)
+                .show();
     }
 
     private void updateFavoriteButtonState(boolean isFav) {
         btnFav.setChecked(isFav);
-        btnFav.setText(isFav?"已收藏":"收藏");
+        btnFav.setText(isFav ? R.string.fav_added : R.string.fav_normal);
     }
 }

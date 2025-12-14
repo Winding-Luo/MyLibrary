@@ -4,11 +4,16 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.SearchView;
@@ -18,17 +23,24 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.example.mylibrary.BookContract.BookEntry;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
-public class HomeFragment extends Fragment {
+public class HomeFragment extends Fragment implements SensorEventListener {
 
     private BookDbHelper dbHelper;
     private BookAdapter adapter;
     private RecyclerView recyclerView;
 
     private String currentKeyword = "";
-    private int currentStatusFilter = -1; // -1:全部, 0:想看, 1:阅读中, 2:已读
-    private String currentSortOrder = "time"; // time, rating, status
+    private int currentStatusFilter = -1;
+    private String currentSortOrder = "time";
+
+    private SensorManager sensorManager;
+    private Sensor accelerometer;
+    private float acceleration;
+    private float currentAcceleration;
+    private float lastAcceleration;
 
     @Nullable
     @Override
@@ -51,55 +63,85 @@ public class HomeFragment extends Fragment {
 
         recyclerView.setAdapter(adapter);
 
-        // 设置 Toolbar 菜单
         if (toolbar != null) {
             toolbar.setOnMenuItemClickListener(this::onToolbarMenuItemClick);
         }
 
-        // 搜索逻辑
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
-            @Override
-            public boolean onQueryTextSubmit(String query) {
-                currentKeyword = query;
-                loadBooks();
-                return true;
-            }
-            @Override
-            public boolean onQueryTextChange(String newText) {
-                currentKeyword = newText;
-                loadBooks();
-                return true;
-            }
+            @Override public boolean onQueryTextSubmit(String query) { currentKeyword = query; loadBooks(); return true; }
+            @Override public boolean onQueryTextChange(String newText) { currentKeyword = newText; loadBooks(); return true; }
         });
 
-        return view;
-    }
-
-    private boolean onToolbarMenuItemClick(MenuItem item) {
-        int id = item.getItemId();
-        if (id == R.id.sort_time) {
-            currentSortOrder = "time";
-        } else if (id == R.id.sort_rating) {
-            currentSortOrder = "rating";
-        } else if (id == R.id.sort_status) {
-            currentSortOrder = "status";
-        } else if (id == R.id.filter_all) {
-            currentStatusFilter = -1;
-        } else if (id == R.id.filter_todo) {
-            currentStatusFilter = 0;
-        } else if (id == R.id.filter_reading) {
-            currentStatusFilter = 1;
-        } else if (id == R.id.filter_read) {
-            currentStatusFilter = 2;
+        sensorManager = (SensorManager) requireActivity().getSystemService(Context.SENSOR_SERVICE);
+        if (sensorManager != null) {
+            accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+            acceleration = 0.00f;
+            currentAcceleration = SensorManager.GRAVITY_EARTH;
+            lastAcceleration = SensorManager.GRAVITY_EARTH;
         }
-        loadBooks();
-        return true;
+
+        return view;
     }
 
     @Override
     public void onResume() {
         super.onResume();
         loadBooks();
+        if (sensorManager != null && accelerometer != null) {
+            sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_UI);
+        }
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        if (sensorManager != null) {
+            sensorManager.unregisterListener(this);
+        }
+    }
+
+    @Override
+    public void onSensorChanged(SensorEvent event) {
+        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+            float x = event.values[0];
+            float y = event.values[1];
+            float z = event.values[2];
+
+            lastAcceleration = currentAcceleration;
+            currentAcceleration = (float) Math.sqrt(x * x + y * y + z * z);
+            float delta = currentAcceleration - lastAcceleration;
+            acceleration = acceleration * 0.9f + delta;
+
+            if (acceleration > 12) {
+                acceleration = 0;
+                performShakeAction();
+            }
+        }
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {}
+
+    private void performShakeAction() {
+        Toast.makeText(requireContext(), R.string.shake_detected, Toast.LENGTH_SHORT).show();
+        List<Book> currentBooks = new ArrayList<>(adapter.getBooks());
+        if (!currentBooks.isEmpty()) {
+            Collections.shuffle(currentBooks);
+            adapter.setBooks(currentBooks);
+        }
+    }
+
+    private boolean onToolbarMenuItemClick(MenuItem item) {
+        int id = item.getItemId();
+        if (id == R.id.sort_time) currentSortOrder = "time";
+        else if (id == R.id.sort_rating) currentSortOrder = "rating";
+        else if (id == R.id.sort_status) currentSortOrder = "status";
+        else if (id == R.id.filter_all) currentStatusFilter = -1;
+        else if (id == R.id.filter_todo) currentStatusFilter = 0;
+        else if (id == R.id.filter_reading) currentStatusFilter = 1;
+        else if (id == R.id.filter_read) currentStatusFilter = 2;
+        loadBooks();
+        return true;
     }
 
     private void loadBooks() {
@@ -108,7 +150,6 @@ public class HomeFragment extends Fragment {
         long currentUserId = prefs.getLong("current_user_id", -1);
 
         List<Book> books = new ArrayList<>();
-        // 确保调用的是支持所有参数的 queryBooks
         Cursor cursor = dbHelper.queryBooks(currentUserId, currentKeyword, currentStatusFilter, currentSortOrder);
 
         while (cursor.moveToNext()) {
@@ -117,24 +158,8 @@ public class HomeFragment extends Fragment {
             String author = cursor.getString(cursor.getColumnIndexOrThrow(BookEntry.COLUMN_AUTHOR));
             float rating = cursor.getFloat(cursor.getColumnIndexOrThrow(BookEntry.COLUMN_RATING));
             String imageUri = cursor.getString(cursor.getColumnIndexOrThrow(BookEntry.COLUMN_IMAGE_URI));
-
-            // 兼容读取 status
-            int status = 0;
-            try {
-                status = cursor.getInt(cursor.getColumnIndexOrThrow("status"));
-            } catch (Exception e) {
-                // Ignore
-            }
-
-            // [新增] 兼容读取 filePath
-            String filePath = "";
-            try {
-                filePath = cursor.getString(cursor.getColumnIndexOrThrow("file_path"));
-            } catch (Exception e) {
-                // Ignore
-            }
-
-            // [修改] 使用完整的 7 参数构造函数
+            int status = 0; try { status = cursor.getInt(cursor.getColumnIndexOrThrow("status")); } catch (Exception e) {}
+            String filePath = ""; try { filePath = cursor.getString(cursor.getColumnIndexOrThrow("file_path")); } catch (Exception e) {}
             books.add(new Book(id, title, author, rating, imageUri, status, filePath));
         }
         cursor.close();

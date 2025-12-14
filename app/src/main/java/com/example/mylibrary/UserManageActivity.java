@@ -27,13 +27,15 @@ public class UserManageActivity extends AppCompatActivity {
     private BookDbHelper dbHelper;
     private long userId;
     private String currentAvatarUri;
+    private Uri selectedUri;
 
     private final ActivityResultLauncher<String[]> pickImageLauncher = registerForActivityResult(
             new ActivityResultContracts.OpenDocument(),
             uri -> {
                 if (uri != null) {
-                    currentAvatarUri = copyImageToInternalStorage(uri);
-                    loadAvatar(currentAvatarUri);
+                    selectedUri = uri; // 暂存，不立即复制
+                    loadAvatar(uri.toString());
+                    try { getContentResolver().takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION); } catch (Exception e) {}
                 }
             }
     );
@@ -90,22 +92,31 @@ public class UserManageActivity extends AppCompatActivity {
         String confirm = etConfirm.getText().toString();
 
         if (name.isEmpty()) {
-            Toast.makeText(this, "用户名不能为空", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.username_empty, Toast.LENGTH_SHORT).show();
             return;
         }
 
         if (!pass.isEmpty() && !pass.equals(confirm)) {
-            Toast.makeText(this, "两次密码不一致", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.password_mismatch, Toast.LENGTH_SHORT).show();
             return;
         }
 
-        dbHelper.updateUser(userId, name, pass, currentAvatarUri);
+        // 子线程处理 IO
+        new Thread(() -> {
+            if (selectedUri != null) {
+                currentAvatarUri = copyImageToInternalStorage(selectedUri);
+            }
 
-        getSharedPreferences("UserPrefs", MODE_PRIVATE)
-                .edit().putString("username", name).apply();
+            dbHelper.updateUser(userId, name, pass, currentAvatarUri);
 
-        Toast.makeText(this, "修改成功", Toast.LENGTH_SHORT).show();
-        finish();
+            getSharedPreferences("UserPrefs", MODE_PRIVATE)
+                    .edit().putString("username", name).apply();
+
+            runOnUiThread(() -> {
+                Toast.makeText(this, R.string.modify_success, Toast.LENGTH_SHORT).show();
+                finish();
+            });
+        }).start();
     }
 
     private String copyImageToInternalStorage(Uri uri) {
