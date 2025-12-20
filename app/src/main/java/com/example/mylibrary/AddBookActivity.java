@@ -48,30 +48,28 @@ public class AddBookActivity extends AppCompatActivity {
     private Uri photoUri = null;
     private long mBookId = -1;
 
-    // 拍照回调
+    // === 修改点 1：拍照回调中使用 updateCoverImage ===
     private final ActivityResultLauncher<Uri> takePictureLauncher = registerForActivityResult(
             new ActivityResultContracts.TakePicture(),
             success -> {
                 if (success && photoUri != null) {
-                    selectedImageUri = photoUri;
-                    Glide.with(this).load(photoUri).into(ivPreview);
+                    updateCoverImage(photoUri); // 使用新方法加载
                 }
             }
     );
 
-    // 相册选择回调
+    // === 修改点 2：相册选择回调中使用 updateCoverImage ===
     private final ActivityResultLauncher<String[]> pickImageLauncher = registerForActivityResult(
             new ActivityResultContracts.OpenDocument(),
             uri -> {
                 if (uri != null) {
-                    selectedImageUri = uri;
-                    Glide.with(this).load(uri).into(ivPreview);
+                    updateCoverImage(uri); // 使用新方法加载
                     try { getContentResolver().takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION); } catch (Exception e) {}
                 }
             }
     );
 
-    // 文件选择回调
+    // 文件选择回调 (保持不变)
     private final ActivityResultLauncher<String[]> pickFileLauncher = registerForActivityResult(
             new ActivityResultContracts.OpenDocument(),
             uri -> {
@@ -121,6 +119,16 @@ public class AddBookActivity extends AppCompatActivity {
         }
     }
 
+    // === 修改点 3：新增辅助方法，用于清除样式并显示图片 ===
+    private void updateCoverImage(Uri uri) {
+        selectedImageUri = uri;
+        // 关键：清除 XML 中设置的 padding 和 tint，否则图片会显示得很小且发灰
+        ivPreview.setPadding(0, 0, 0, 0);
+        ivPreview.setImageTintList(null);
+        // 加载图片
+        Glide.with(this).load(uri).into(ivPreview);
+    }
+
     private void checkCameraPermission() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, 100);
@@ -166,10 +174,12 @@ public class AddBookActivity extends AppCompatActivity {
             etAuthor.setText(book.getAuthor());
             ratingBar.setRating(book.getRating());
             spinnerStatus.setSelection(book.getStatus());
+
+            // === 修改点 4：加载已有数据时也调用 updateCoverImage ===
             if (book.getImageUri() != null && !book.getImageUri().isEmpty()) {
-                selectedImageUri = Uri.parse(book.getImageUri());
-                Glide.with(this).load(book.getImageUri()).into(ivPreview);
+                updateCoverImage(Uri.parse(book.getImageUri()));
             }
+
             if (book.getFilePath() != null && !book.getFilePath().isEmpty()) {
                 selectedFileUri = Uri.parse(book.getFilePath());
                 tvFileStatus.setText(R.string.file_associated);

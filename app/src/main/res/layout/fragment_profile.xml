@@ -120,34 +120,10 @@
         android:padding="24dp"
         android:gravity="center">
 
-        <TextView
-            android:id="@+id/tv_location_info"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/location_unknown"
-            android:textColor="@color/colorTextSecondary"
-            android:layout_marginBottom="8dp"/>
-
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center">
-
-            <Button
-                android:id="@+id/btn_get_location"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/btn_get_location"
-                style="@style/Widget.Material3.Button.OutlinedButton"
-                android:layout_marginEnd="8dp"/>
-
-            <Button
-                android:id="@+id/btn_open_map"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/btn_open_map"
-                style="@style/Widget.Material3.Button.TonalButton"/>
-        </LinearLayout>
+            android:gravity="center"/>
     </LinearLayout>
 
     <View
