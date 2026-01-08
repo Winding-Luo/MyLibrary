@@ -48,14 +48,23 @@ public class PublicReviewAdapter extends RecyclerView.Adapter<PublicReviewAdapte
         holder.tvContent.setText(review.getComment());
         holder.tvTime.setText(review.getTimestamp());
 
-        // 处理点赞数据
+        // 使用 TimeUtil 格式化并显示
+        if (review.getUserReadingDuration() != null && !review.getUserReadingDuration().isEmpty()) {
+            holder.tvUserDuration.setVisibility(View.VISIBLE);
+            try {
+                long millis = Long.parseLong(review.getUserReadingDuration());
+                holder.tvUserDuration.setText("已读 " + TimeUtil.formatDuration(millis));
+            } catch (NumberFormatException e) {
+                holder.tvUserDuration.setVisibility(View.GONE);
+            }
+        } else {
+            holder.tvUserDuration.setVisibility(View.GONE);
+        }
+
         int likeCount = dbHelper.getReviewLikeCount(review.getId());
         boolean isLiked = dbHelper.isReviewLikedByMe(currentUserId, review.getId());
-
         holder.tvLikeCount.setText(likeCount > 0 ? String.valueOf(likeCount) : "赞");
-
-        // [修改] 图标变色 (黄色高亮)
-        int color = isLiked ? 0xFFFFD700 : 0xFF757575; // 0xFFFFD700 是金色
+        int color = isLiked ? 0xFFFFD700 : 0xFF757575;
         holder.ivLike.setColorFilter(color);
         holder.tvLikeCount.setTextColor(color);
 
@@ -64,13 +73,11 @@ public class PublicReviewAdapter extends RecyclerView.Adapter<PublicReviewAdapte
             notifyItemChanged(position);
         });
 
-        // 处理回复列表
         holder.layoutReplies.removeAllViews();
         Cursor cursor = dbHelper.getReviewReplies(review.getId());
         while (cursor.moveToNext()) {
             String rUser = cursor.getString(cursor.getColumnIndexOrThrow("username"));
             String rContent = cursor.getString(cursor.getColumnIndexOrThrow("content"));
-
             TextView tvReply = new TextView(context);
             tvReply.setText(rUser + ": " + rContent);
             tvReply.setTextSize(13);
@@ -79,10 +86,7 @@ public class PublicReviewAdapter extends RecyclerView.Adapter<PublicReviewAdapte
             holder.layoutReplies.addView(tvReply);
         }
         cursor.close();
-
         holder.layoutReplies.setVisibility(holder.layoutReplies.getChildCount() > 0 ? View.VISIBLE : View.GONE);
-
-        // 点击回复
         holder.layoutReply.setOnClickListener(v -> showReplyDialog(review));
     }
 
@@ -111,23 +115,20 @@ public class PublicReviewAdapter extends RecyclerView.Adapter<PublicReviewAdapte
     public int getItemCount() { return reviews.size(); }
 
     static class ReviewViewHolder extends RecyclerView.ViewHolder {
-        TextView tvUser, tvContent, tvTime, tvLikeCount;
+        TextView tvUser, tvContent, tvTime, tvLikeCount, tvUserDuration;
         ImageView ivLike;
         LinearLayout layoutReplies, layoutLike, layoutReply;
 
         public ReviewViewHolder(@NonNull View itemView) {
             super(itemView);
             tvUser = itemView.findViewById(R.id.tv_review_user);
+            tvUserDuration = itemView.findViewById(R.id.tv_review_user_duration);
             tvContent = itemView.findViewById(R.id.tv_review_content);
             tvTime = itemView.findViewById(R.id.tv_review_time);
-
-            // 绑定新布局的控件
             layoutLike = itemView.findViewById(R.id.layout_btn_like);
             ivLike = itemView.findViewById(R.id.iv_review_like);
             tvLikeCount = itemView.findViewById(R.id.tv_review_like_count);
-
             layoutReply = itemView.findViewById(R.id.layout_btn_reply);
-
             layoutReplies = itemView.findViewById(R.id.layout_replies_container);
         }
     }

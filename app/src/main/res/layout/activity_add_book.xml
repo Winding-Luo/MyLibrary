@@ -12,6 +12,7 @@
         android:padding="24dp">
 
         <TextView
+            android:id="@+id/tv_page_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/add_new_book"
@@ -54,16 +55,6 @@
                     android:paddingVertical="4dp"/>
             </FrameLayout>
         </androidx.cardview.widget.CardView>
-
-        <Button
-            android:id="@+id/btn_take_photo"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/camera_btn_text"
-            android:layout_gravity="center_horizontal"
-            app:icon="@android:drawable/ic_menu_camera"
-            style="@style/Widget.Material3.Button.TonalButton"
-            android:layout_marginBottom="24dp"/>
 
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"

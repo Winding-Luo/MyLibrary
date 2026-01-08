@@ -11,14 +11,21 @@ import java.io.InputStreamReader;
 
 public class ReadActivity extends AppCompatActivity {
 
+    private long startTime;
+    private long bookId;
+    private BookDbHelper dbHelper;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_read);
 
+        dbHelper = new BookDbHelper(this);
+
         TextView tvContent = findViewById(R.id.tv_book_content);
         String title = getIntent().getStringExtra("book_title");
         String uriString = getIntent().getStringExtra("book_path");
+        bookId = getIntent().getLongExtra("book_id", -1);
 
         if (title != null) setTitle(title);
 
@@ -26,6 +33,25 @@ public class ReadActivity extends AppCompatActivity {
             loadTextContent(Uri.parse(uriString), tvContent);
         } else {
             tvContent.setText("无法打开书籍：文件路径丢失");
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        startTime = System.currentTimeMillis();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (bookId != -1) {
+            long endTime = System.currentTimeMillis();
+            long sessionDuration = endTime - startTime;
+            // 超过5秒才记录，避免误触
+            if (sessionDuration > 5000) {
+                dbHelper.addReadingTime(bookId, sessionDuration);
+            }
         }
     }
 

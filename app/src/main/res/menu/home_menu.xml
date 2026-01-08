@@ -3,25 +3,25 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
-        android:title="排序"
+        android:title="@string/menu_sort"
         app:showAsAction="ifRoom"
         android:icon="@android:drawable/ic_menu_sort_by_size">
         <menu>
-            <item android:id="@+id/sort_time" android:title="按添加时间" />
-            <item android:id="@+id/sort_rating" android:title="按评分高低" />
-            <item android:id="@+id/sort_status" android:title="按阅读状态" />
+            <item android:id="@+id/sort_time" android:title="@string/sort_time" />
+            <item android:id="@+id/sort_rating" android:title="@string/sort_rating" />
+            <item android:id="@+id/sort_status" android:title="@string/sort_status" />
         </menu>
     </item>
 
     <item
-        android:title="筛选"
+        android:title="@string/menu_filter"
         app:showAsAction="ifRoom"
         android:icon="@android:drawable/ic_menu_view">
         <menu>
-            <item android:id="@+id/filter_all" android:title="显示全部" />
-            <item android:id="@+id/filter_todo" android:title="只看想看" />
-            <item android:id="@+id/filter_reading" android:title="只看阅读中" />
-            <item android:id="@+id/filter_read" android:title="只看已读" />
+            <item android:id="@+id/filter_all" android:title="@string/filter_all" />
+            <item android:id="@+id/filter_todo" android:title="@string/filter_todo" />
+            <item android:id="@+id/filter_reading" android:title="@string/filter_reading" />
+            <item android:id="@+id/filter_read" android:title="@string/filter_read" />
         </menu>
     </item>
 </menu>

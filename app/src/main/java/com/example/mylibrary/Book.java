@@ -6,11 +6,12 @@ public class Book {
     private String author;
     private float rating;
     private String imageUri;
-    private int status;      // [修复] 补全字段
-    private String filePath; // [修复] 补全字段
+    private int status;
+    private String filePath;
+    private String readingDuration; // [新增]
 
-    // [修复] 构造函数包含所有7个参数
-    public Book(long id, String title, String author, float rating, String imageUri, int status, String filePath) {
+    // [修改] 构造函数包含所有参数
+    public Book(long id, String title, String author, float rating, String imageUri, int status, String filePath, String readingDuration) {
         this.id = id;
         this.title = title;
         this.author = author;
@@ -18,6 +19,13 @@ public class Book {
         this.imageUri = imageUri;
         this.status = status;
         this.filePath = filePath;
+        this.readingDuration = readingDuration;
+    }
+
+    // 兼容旧代码的构造函数（为了严谨，如果你有测试代码依赖这个，建议更新测试代码，这里作为备选）
+    // 但根据你的需求，我们优先使用全参数构造
+    public Book(long id, String title, String author, float rating, String imageUri, int status, String filePath) {
+        this(id, title, author, rating, imageUri, status, filePath, "");
     }
 
     public long getId() { return id; }
@@ -25,8 +33,9 @@ public class Book {
     public String getAuthor() { return author; }
     public float getRating() { return rating; }
     public String getImageUri() { return imageUri; }
-    public int getStatus() { return status; }       // [修复] 补全Getter
-    public String getFilePath() { return filePath; } // [修复] 补全Getter
+    public int getStatus() { return status; }
+    public String getFilePath() { return filePath; }
+    public String getReadingDuration() { return readingDuration; } // [新增]
 
     public String getStatusText() {
         switch (status) {

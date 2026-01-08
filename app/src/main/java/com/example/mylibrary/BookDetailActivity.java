@@ -29,7 +29,7 @@ public class BookDetailActivity extends AppCompatActivity {
     private BookDbHelper dbHelper;
     private boolean isPublicMode = false;
 
-    private TextView tvTitle, tvAuthor;
+    private TextView tvTitle, tvAuthor, tvDuration;
     private ImageView ivCover;
     private RatingBar ratingBar, reviewRatingBar;
     private CheckBox btnFav;
@@ -54,6 +54,7 @@ public class BookDetailActivity extends AppCompatActivity {
 
         tvTitle = findViewById(R.id.tv_detail_title);
         tvAuthor = findViewById(R.id.tv_detail_author);
+        tvDuration = findViewById(R.id.tv_detail_duration);
         ivCover = findViewById(R.id.iv_detail_cover);
         ratingBar = findViewById(R.id.rating_bar);
 
@@ -124,6 +125,7 @@ public class BookDetailActivity extends AppCompatActivity {
             fabDelete.setVisibility(View.GONE);
             btnShare.setVisibility(View.GONE);
             btnFav.setVisibility(View.GONE);
+            tvDuration.setVisibility(View.GONE);
             btnAddToLib.setVisibility(View.VISIBLE);
             layoutReviewsContainer.setVisibility(View.VISIBLE);
             layoutReviewInput.setVisibility(View.VISIBLE);
@@ -148,6 +150,18 @@ public class BookDetailActivity extends AppCompatActivity {
             tvAuthor.setText(book.getAuthor());
             ratingBar.setRating(book.getRating());
             if (book.getImageUri() != null) Glide.with(this).load(book.getImageUri()).into(ivCover);
+
+            if (book.getReadingDuration() != null && !book.getReadingDuration().isEmpty()) {
+                tvDuration.setVisibility(View.VISIBLE);
+                try {
+                    long millis = Long.parseLong(book.getReadingDuration());
+                    tvDuration.setText("阅读时长: " + TimeUtil.formatDuration(millis));
+                } catch (NumberFormatException e) {
+                    tvDuration.setText("阅读时长: 0分钟");
+                }
+            } else {
+                tvDuration.setVisibility(View.GONE);
+            }
         }
     }
 
@@ -173,7 +187,9 @@ public class BookDetailActivity extends AppCompatActivity {
             float rating = cursor.getFloat(cursor.getColumnIndexOrThrow("rating"));
             String comment = cursor.getString(cursor.getColumnIndexOrThrow("comment"));
             String time = cursor.getString(cursor.getColumnIndexOrThrow("timestamp"));
-            reviews.add(new PublicReview(id, uId, user, rating, comment, time));
+            String userDuration = "";
+            try { userDuration = cursor.getString(cursor.getColumnIndexOrThrow("reading_duration")); } catch (Exception e) {}
+            reviews.add(new PublicReview(id, uId, user, rating, comment, time, userDuration));
         }
         cursor.close();
         reviewAdapter.setReviews(reviews);
@@ -185,6 +201,7 @@ public class BookDetailActivity extends AppCompatActivity {
             Intent intent = new Intent(this, ReadActivity.class);
             intent.putExtra("book_path", book.getFilePath());
             intent.putExtra("book_title", book.getTitle());
+            intent.putExtra("book_id", bookId); // 传递 ID 以记录时长
             startActivity(intent);
         } else {
             Toast.makeText(this, R.string.no_ebook, Toast.LENGTH_SHORT).show();

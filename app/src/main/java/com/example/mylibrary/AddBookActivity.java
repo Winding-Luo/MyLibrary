@@ -19,6 +19,7 @@ import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -39,8 +40,9 @@ public class AddBookActivity extends AppCompatActivity {
     private RatingBar ratingBar;
     private Spinner spinnerStatus;
     private ImageView ivPreview;
-    private Button btnSave, btnImportFile, btnTakePhoto;
-    private TextView tvFileStatus;
+    private Button btnSave, btnImportFile;
+    // [修改] 移除了 btnTakePhoto，新增了 tvPageTitle
+    private TextView tvFileStatus, tvPageTitle;
 
     private BookDbHelper dbHelper;
     private Uri selectedImageUri = null;
@@ -48,28 +50,25 @@ public class AddBookActivity extends AppCompatActivity {
     private Uri photoUri = null;
     private long mBookId = -1;
 
-    // === 修改点 1：拍照回调中使用 updateCoverImage ===
     private final ActivityResultLauncher<Uri> takePictureLauncher = registerForActivityResult(
             new ActivityResultContracts.TakePicture(),
             success -> {
                 if (success && photoUri != null) {
-                    updateCoverImage(photoUri); // 使用新方法加载
+                    updateCoverImage(photoUri);
                 }
             }
     );
 
-    // === 修改点 2：相册选择回调中使用 updateCoverImage ===
     private final ActivityResultLauncher<String[]> pickImageLauncher = registerForActivityResult(
             new ActivityResultContracts.OpenDocument(),
             uri -> {
                 if (uri != null) {
-                    updateCoverImage(uri); // 使用新方法加载
+                    updateCoverImage(uri);
                     try { getContentResolver().takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION); } catch (Exception e) {}
                 }
             }
     );
 
-    // 文件选择回调 (保持不变)
     private final ActivityResultLauncher<String[]> pickFileLauncher = registerForActivityResult(
             new ActivityResultContracts.OpenDocument(),
             uri -> {
@@ -95,7 +94,9 @@ public class AddBookActivity extends AppCompatActivity {
         btnSave = findViewById(R.id.btn_save);
         btnImportFile = findViewById(R.id.btn_import_file);
         tvFileStatus = findViewById(R.id.tv_file_status);
-        btnTakePhoto = findViewById(R.id.btn_take_photo);
+
+        // [新增] 绑定标题 TextView
+        tvPageTitle = findViewById(R.id.tv_page_title);
 
         String[] statuses = {
                 getString(R.string.status_todo),
@@ -105,8 +106,7 @@ public class AddBookActivity extends AppCompatActivity {
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, statuses);
         spinnerStatus.setAdapter(adapter);
 
-        ivPreview.setOnClickListener(v -> pickImageLauncher.launch(new String[]{"image/*"}));
-        btnTakePhoto.setOnClickListener(v -> checkCameraPermission());
+        ivPreview.setOnClickListener(v -> showImageSourceDialog());
         btnImportFile.setOnClickListener(v -> pickFileLauncher.launch(new String[]{"text/plain"}));
         btnSave.setOnClickListener(v -> saveBook());
 
@@ -114,18 +114,33 @@ public class AddBookActivity extends AppCompatActivity {
         if (mBookId != -1) {
             loadBookData(mBookId);
             btnSave.setText(R.string.update_book);
+            // [新增] 编辑模式下修改标题
+            tvPageTitle.setText("编辑书籍");
         } else {
             btnSave.setText(R.string.save_book);
+            // [新增] 新建模式下保持原样
+            tvPageTitle.setText(R.string.add_new_book);
         }
     }
 
-    // === 修改点 3：新增辅助方法，用于清除样式并显示图片 ===
+    private void showImageSourceDialog() {
+        String[] options = {"拍照", "从相册选择"};
+        new AlertDialog.Builder(this)
+                .setTitle("设置封面")
+                .setItems(options, (dialog, which) -> {
+                    if (which == 0) {
+                        checkCameraPermission();
+                    } else {
+                        pickImageLauncher.launch(new String[]{"image/*"});
+                    }
+                })
+                .show();
+    }
+
     private void updateCoverImage(Uri uri) {
         selectedImageUri = uri;
-        // 关键：清除 XML 中设置的 padding 和 tint，否则图片会显示得很小且发灰
         ivPreview.setPadding(0, 0, 0, 0);
         ivPreview.setImageTintList(null);
-        // 加载图片
         Glide.with(this).load(uri).into(ivPreview);
     }
 
@@ -174,12 +189,9 @@ public class AddBookActivity extends AppCompatActivity {
             etAuthor.setText(book.getAuthor());
             ratingBar.setRating(book.getRating());
             spinnerStatus.setSelection(book.getStatus());
-
-            // === 修改点 4：加载已有数据时也调用 updateCoverImage ===
             if (book.getImageUri() != null && !book.getImageUri().isEmpty()) {
                 updateCoverImage(Uri.parse(book.getImageUri()));
             }
-
             if (book.getFilePath() != null && !book.getFilePath().isEmpty()) {
                 selectedFileUri = Uri.parse(book.getFilePath());
                 tvFileStatus.setText(R.string.file_associated);
@@ -221,9 +233,11 @@ public class AddBookActivity extends AppCompatActivity {
             }
 
             if (mBookId == -1) {
-                dbHelper.addBook(userId, title, author, rating, finalImagePath, status, finalFilePath);
+                dbHelper.addBook(userId, title, author, rating, finalImagePath, status, finalFilePath, "0");
             } else {
-                dbHelper.updateBook(mBookId, title, author, rating, finalImagePath, status, finalFilePath);
+                Book old = dbHelper.getBook(mBookId);
+                String oldDuration = (old != null && old.getReadingDuration() != null) ? old.getReadingDuration() : "0";
+                dbHelper.updateBook(mBookId, title, author, rating, finalImagePath, status, finalFilePath, oldDuration);
             }
 
             runOnUiThread(() -> {

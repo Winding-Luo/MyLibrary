@@ -85,7 +85,15 @@
                     android:textSize="16sp"
                     android:textColor="@color/colorPrimary"
                     android:layout_marginTop="4dp"
-                    android:layout_marginBottom="16dp"/>
+                    android:layout_marginBottom="8dp"/> <TextView
+                android:id="@+id/tv_detail_duration"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="阅读时长: --"
+                android:textSize="14sp"
+                android:textColor="#FF9800"
+                android:layout_marginBottom="16dp"
+                android:visibility="gone"/>
 
                 <RatingBar
                     android:id="@+id/rating_bar"

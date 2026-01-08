@@ -1,67 +1,147 @@
+<!--<resources>-->
+<!--    <string name="app_name">MyLibrary</string>-->
+
+<!--    <string name="username_empty">用户名不能为空</string>-->
+<!--    <string name="input_complete_info">请输入完整信息</string>-->
+<!--    <string name="password_mismatch">两次密码不一致</string>-->
+<!--    <string name="unknown_error">未知错误</string>-->
+<!--    <string name="cancel">取消</string>-->
+<!--    <string name="confirm">确定</string>-->
+
+<!--    <string name="login_success">登录成功</string>-->
+<!--    <string name="login_fail">用户名或密码错误</string>-->
+<!--    <string name="register_success">注册成功，请登录</string>-->
+<!--    <string name="register_fail">注册失败，用户名可能已存在</string>-->
+<!--    <string name="welcome_back">欢迎回来</string>-->
+<!--    <string name="login_hint">请登录您的书库账号</string>-->
+
+<!--    <string name="status_todo">想看</string>-->
+<!--    <string name="status_reading">阅读中</string>-->
+<!--    <string name="status_read">已读</string>-->
+
+<!--    <string name="add_new_book">添加新书</string>-->
+<!--    <string name="update_book">更新书籍</string>-->
+<!--    <string name="file_selected">已选择: %s</string>-->
+<!--    <string name="file_associated">已关联电子书</string>-->
+<!--    <string name="add_success">添加成功</string>-->
+<!--    <string name="update_success">更新成功</string>-->
+<!--    <string name="save_book">保存书籍</string>-->
+<!--    <string name="import_ebook">导入电子书 (.txt)</string>-->
+<!--    <string name="no_file_selected">未选择文件</string>-->
+<!--    <string name="take_photo">拍照</string>-->
+<!--    <string name="camera_permission_needed">需要相机权限才能拍照</string>-->
+<!--    <string name="camera_launch_fail">无法启动相机</string>-->
+<!--    <string name="camera_btn_text">拍摄封面</string>-->
+
+<!--    <string name="share_success">已分享到广场</string>-->
+<!--    <string name="share_fail">广场上已存在这本书</string>-->
+<!--    <string name="add_to_lib_success">已加入你的图书馆</string>-->
+<!--    <string name="add_to_lib_fail">你的图书馆里已经有这本书了</string>-->
+<!--    <string name="review_success">评论成功</string>-->
+<!--    <string name="no_ebook">未关联电子书</string>-->
+<!--    <string name="delete_confirm_title">删除</string>-->
+<!--    <string name="delete_confirm_msg">确定删除吗？</string>-->
+<!--    <string name="btn_delete">删除</string>-->
+<!--    <string name="fav_added">已收藏</string>-->
+<!--    <string name="fav_normal">收藏</string>-->
+<!--    <string name="my_collection">我的收藏</string>-->
+
+<!--    <string name="shake_detected">检测到摇晃，已随机重排书籍</string>-->
+
+<!--    <string name="modify_success">修改成功</string>-->
+<!--    <string name="my_favorites">我的收藏</string>-->
+<!--    <string name="my_reviews">我的评论历史</string>-->
+<!--    <string name="profile_edit">编辑个人资料</string>-->
+<!--    <string name="logout">退出登录</string>-->
+<!--    <string name="location_unknown">当前位置: 未获取</string>-->
+<!--    <string name="btn_get_location">获取位置</string>-->
+<!--    <string name="btn_open_map">查看地图</string>-->
+<!--    <string name="location_permission_needed">需要定位权限</string>-->
+<!--    <string name="getting_location">正在获取位置...</string>-->
+<!--    <string name="location_format">经度: %.4f, 纬度: %.4f</string>-->
+<!--    <string name="map_app_not_found">未找到地图应用</string>-->
+<!--    <string name="location_first">请先获取位置</string>-->
+
+<!--    <string name="title_my_favorites">我的收藏</string>-->
+<!--    <string name="title_my_reviews">我的评论历史</string>-->
+<!--</resources>-->
 <resources>
-    <string name="app_name">MyLibrary</string>
+    <string name="app_name">My Library</string> <string name="nav_library">Library</string>
+    <string name="nav_square">Square</string>
+    <string name="nav_profile">Profile</string>
 
-    <string name="username_empty">用户名不能为空</string>
-    <string name="input_complete_info">请输入完整信息</string>
-    <string name="password_mismatch">两次密码不一致</string>
-    <string name="unknown_error">未知错误</string>
-    <string name="cancel">取消</string>
-    <string name="confirm">确定</string>
+    <string name="menu_sort">Sort</string>
+    <string name="sort_time">By Time</string>
+    <string name="sort_rating">By Rating</string>
+    <string name="sort_status">By Status</string>
 
-    <string name="login_success">登录成功</string>
-    <string name="login_fail">用户名或密码错误</string>
-    <string name="register_success">注册成功，请登录</string>
-    <string name="register_fail">注册失败，用户名可能已存在</string>
-    <string name="welcome_back">欢迎回来</string>
-    <string name="login_hint">请登录您的书库账号</string>
+    <string name="menu_filter">Filter</string>
+    <string name="filter_all">Show All</string>
+    <string name="filter_todo">Todo Only</string>
+    <string name="filter_reading">Reading Only</string>
+    <string name="filter_read">Read Only</string>
 
-    <string name="status_todo">想看</string>
-    <string name="status_reading">阅读中</string>
-    <string name="status_read">已读</string>
+    <string name="username_empty">Username cannot be empty</string>
+    <string name="input_complete_info">Please enter complete information</string>
+    <string name="password_mismatch">Passwords do not match</string>
+    <string name="unknown_error">Unknown error</string>
+    <string name="cancel">Cancel</string>
+    <string name="confirm">Confirm</string>
 
-    <string name="add_new_book">添加新书</string>
-    <string name="update_book">更新书籍</string>
-    <string name="file_selected">已选择: %s</string>
-    <string name="file_associated">已关联电子书</string>
-    <string name="add_success">添加成功</string>
-    <string name="update_success">更新成功</string>
-    <string name="save_book">保存书籍</string>
-    <string name="import_ebook">导入电子书 (.txt)</string>
-    <string name="no_file_selected">未选择文件</string>
-    <string name="take_photo">拍照</string>
-    <string name="camera_permission_needed">需要相机权限才能拍照</string>
-    <string name="camera_launch_fail">无法启动相机</string>
-    <string name="camera_btn_text">拍摄封面</string>
+    <string name="login_success">Login successful</string>
+    <string name="login_fail">Incorrect username or password</string>
+    <string name="register_success">Registration successful, please login</string>
+    <string name="register_fail">Registration failed, username may already exist</string>
+    <string name="welcome_back">Welcome back</string>
+    <string name="login_hint">Please login to your library account</string>
 
-    <string name="share_success">已分享到广场</string>
-    <string name="share_fail">广场上已存在这本书</string>
-    <string name="add_to_lib_success">已加入你的图书馆</string>
-    <string name="add_to_lib_fail">你的图书馆里已经有这本书了</string>
-    <string name="review_success">评论成功</string>
-    <string name="no_ebook">未关联电子书</string>
-    <string name="delete_confirm_title">删除</string>
-    <string name="delete_confirm_msg">确定删除吗？</string>
-    <string name="btn_delete">删除</string>
-    <string name="fav_added">已收藏</string>
-    <string name="fav_normal">收藏</string>
-    <string name="my_collection">我的收藏</string>
+    <string name="status_todo">To Read</string>
+    <string name="status_reading">Reading</string>
+    <string name="status_read">Read</string>
 
-    <string name="shake_detected">检测到摇晃，已随机重排书籍</string>
+    <string name="add_new_book">Add New Book</string>
+    <string name="update_book">Update Book</string>
+    <string name="file_selected">Selected: %s</string>
+    <string name="file_associated">E-book associated</string>
+    <string name="add_success">Added successfully</string>
+    <string name="update_success">Updated successfully</string>
+    <string name="save_book">Save Book</string>
+    <string name="import_ebook">Import E-book (.txt)</string>
+    <string name="no_file_selected">No file selected</string>
+    <string name="take_photo">Take Photo</string>
+    <string name="camera_permission_needed">Camera permission required to take photos</string>
+    <string name="camera_launch_fail">Failed to launch camera</string>
+    <string name="camera_btn_text">Take Cover Photo</string>
 
-    <string name="modify_success">修改成功</string>
-    <string name="my_favorites">我的收藏</string>
-    <string name="my_reviews">我的评论历史</string>
-    <string name="profile_edit">编辑个人资料</string>
-    <string name="logout">退出登录</string>
-    <string name="location_unknown">当前位置: 未获取</string>
-    <string name="btn_get_location">获取位置</string>
-    <string name="btn_open_map">查看地图</string>
-    <string name="location_permission_needed">需要定位权限</string>
-    <string name="getting_location">正在获取位置...</string>
-    <string name="location_format">经度: %.4f, 纬度: %.4f</string>
-    <string name="map_app_not_found">未找到地图应用</string>
-    <string name="location_first">请先获取位置</string>
+    <string name="share_success">Shared to Square</string>
+    <string name="share_fail">This book already exists in the Square</string>
+    <string name="add_to_lib_success">Added to your library</string>
+    <string name="add_to_lib_fail">This book is already in your library</string>
+    <string name="review_success">Review posted successfully</string>
+    <string name="no_ebook">No e-book associated</string>
+    <string name="delete_confirm_title">Delete</string>
+    <string name="delete_confirm_msg">Are you sure you want to delete?</string>
+    <string name="btn_delete">Delete</string>
+    <string name="fav_added">Favorited</string>
+    <string name="fav_normal">Favorite</string>
+    <string name="my_collection">My Collection</string>
 
-    <string name="title_my_favorites">我的收藏</string>
-    <string name="title_my_reviews">我的评论历史</string>
+    <string name="shake_detected">Shake detected, books reshuffled randomly</string>
+
+    <string name="modify_success">Modified successfully</string>
+    <string name="my_favorites">My Favorites</string>
+    <string name="my_reviews">My Review History</string>
+    <string name="profile_edit">Edit Profile</string>
+    <string name="logout">Logout</string>
+    <string name="location_unknown">Location: Unknown</string>
+    <string name="btn_get_location">Get Location</string>
+    <string name="btn_open_map">View Map</string>
+    <string name="location_permission_needed">Location permission required</string>
+    <string name="getting_location">Getting location...</string>
+    <string name="location_format">Long: %.4f, Lat: %.4f</string>
+    <string name="map_app_not_found">Map app not found</string>
+    <string name="location_first">Please get location first</string>
+
+    <string name="title_my_favorites">My Favorites</string>
+    <string name="title_my_reviews">My Review History</string>
 </resources>
